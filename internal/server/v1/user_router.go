@@ -42,19 +42,6 @@ func (ur *UserRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusCreated, response.Map{"user": u})
 }
 
-// GetAllHandler response all the users.
-func (ur *UserRouter) GetAllHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	users, err := ur.Repository.GetAll(ctx)
-	if err != nil {
-		response.HTTPError(w, r, http.StatusNotFound, err.Error())
-		return
-	}
-
-	response.JSON(w, r, http.StatusOK, response.Map{"users": users})
-}
-
 // GetOneHandler response one user by id.
 func (ur *UserRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -157,17 +144,10 @@ func (ur *UserRouter) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"token": token})
 }
 
-//TODO
-// GetByYearHandler response users by user year.
-// func (ur *UserRouter) GetByYearHandler(w http.ResponseWriter, r *http.Request)
-
 // Routes returns user router with each endpoint.
 func (ur *UserRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.
-		With(middleware.Authorizator).
-		Get("/", ur.GetAllHandler)
 
 	r.Post("/", ur.CreateHandler)
 

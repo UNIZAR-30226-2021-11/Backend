@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS games (
     id serial NOT NULL,
-    name VARCHAR(150) NOT NULL,
+    name VARCHAR(150) NOT NULL UNIQUE,
     public BOOLEAN NOT NULL,
     creation_date timestamp DEFAULT now(),
     end_date timestamp,

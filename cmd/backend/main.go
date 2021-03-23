@@ -3,12 +3,14 @@ package main
 import (
 	"Backend/internal/data"
 	"Backend/internal/server"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"os/signal"
 )
 
 func main() {
+	godotenv.Load(".env")
 	port := os.Getenv("PORT")
 	serv, err := server.New(port)
 	if err != nil {
