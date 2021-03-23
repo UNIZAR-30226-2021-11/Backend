@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS games (
 
 CREATE TABLE IF NOT EXISTS pairs (
     id serial NOT NULL,
-    game_points INT DEFAULT 0,
+    winned BOOLEAN,
     game_id INT NOT NULL,
     CONSTRAINT pk_pairs PRIMARY KEY(id),
     CONSTRAINT fk_pairs_games FOREIGN KEY(game_id) REFERENCES games(id)
