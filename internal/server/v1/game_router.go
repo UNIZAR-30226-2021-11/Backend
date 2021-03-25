@@ -8,16 +8,25 @@ import (
 	"fmt"
 	"github.com/go-chi/chi"
 	"net/http"
+	"strconv"
 )
 
 type GameRouter struct {
 	Repository game.Repository
 }
 
-//CreateHandler Create a new game.
+//CreateHandler Create and join a new game.
 func (gr *GameRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "userId")
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	var g game.Game
-	err := json.NewDecoder(r.Body).Decode(&g)
+	err = json.NewDecoder(r.Body).Decode(&g)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -26,7 +35,7 @@ func (gr *GameRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx := r.Context()
-	err = gr.Repository.Create(ctx, &g)
+	err = gr.Repository.Create(ctx, &g, uint(userID))
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -59,7 +68,7 @@ func (gr *GameRouter) Routes() http.Handler {
 
 	r.Get("/", gr.GetAllHandler)
 
-	//r.Post("/", gr.CreateHandler)
+	r.Post("/{userId}", gr.CreateHandler)
 	//
 	//r.Get("/{id}", gr.GetOneHandler)
 	//
