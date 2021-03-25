@@ -42,18 +42,13 @@ func (ur *UserRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusCreated, response.Map{"user": u})
 }
 
-// GetOneHandler response one user by id.
+// GetOneHandler response one user by username.
 func (ur *UserRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	username := chi.URLParam(r, "username")
 
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
-		return
-	}
 
 	ctx := r.Context()
-	u, err := ur.Repository.GetOne(ctx, uint(id))
+	u, err := ur.Repository.GetByUsername(ctx, username)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusNotFound, err.Error())
 		return
@@ -153,7 +148,7 @@ func (ur *UserRouter) Routes() http.Handler {
 
 	r.
 		With(middleware.Authorizator).
-		Get("/{id}", ur.GetOneHandler)
+		Get("/{username}", ur.GetOneHandler)
 
 	r.
 		With(middleware.Authorizator).

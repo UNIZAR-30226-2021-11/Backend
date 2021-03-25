@@ -13,25 +13,25 @@ type UserRepository struct {
 	Data *Data
 }
 
-// GetOne returns one user by id.
-func (ur *UserRepository) GetOne(ctx context.Context, id uint) (user.User, error) {
-	q := `
-	SELECT id, username, email, location, games_won, games_lost,
-		created_at, updated_at
-		FROM users WHERE id = $1;
-	`
-
-	row := ur.Data.DB.QueryRowContext(ctx, q, id)
-
-	var u user.User
-	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Location, &u.GamesWon, &u.GamesLost,
-		&u.CreatedAt, &u.UpdatedAt)
-	if err != nil {
-		return user.User{}, err
-	}
-
-	return u, nil
-}
+//// GetOne returns one user by id.
+//func (ur *UserRepository) GetOne(ctx context.Context, id uint) (user.User, error) {
+//	q := `
+//	SELECT id, username, email, location, games_won, games_lost,
+//		created_at, updated_at
+//		FROM users WHERE id = $1;
+//	`
+//
+//	row := ur.Data.DB.QueryRowContext(ctx, q, id)
+//
+//	var u user.User
+//	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Location, &u.GamesWon, &u.GamesLost,
+//		&u.CreatedAt, &u.UpdatedAt)
+//	if err != nil {
+//		return user.User{}, err
+//	}
+//
+//	return u, nil
+//}
 
 // GetByUsername returns one user by username.
 func (ur *UserRepository) GetByUsername(ctx context.Context, username string) (user.User, error) {
@@ -111,7 +111,9 @@ func (ur *UserRepository) Update(ctx context.Context, id uint, u user.User) erro
 
 // Delete removes a user by id.
 func (ur *UserRepository) Delete(ctx context.Context, id uint) error {
-	q := `DELETE FROM users WHERE id=$1;`
+	q := `
+	DELETE FROM users WHERE id=$1;
+	`
 
 	stmt, err := ur.Data.DB.PrepareContext(ctx, q)
 	if err != nil {

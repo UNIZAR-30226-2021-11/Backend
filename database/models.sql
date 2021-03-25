@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS players (
     user_id INT NOT NULL,
     pair_id INT NOT NULL,
     CONSTRAINT pk_players PRIMARY KEY(id),
-    CONSTRAINT fk_players_users FOREIGN KEY(user_id) REFERENCES users(id),
+    CONSTRAINT fk_players_users FOREIGN KEY(user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_players_pairs FOREIGN KEY(pair_id) REFERENCES pairs(id)
 );
