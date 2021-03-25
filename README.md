@@ -11,9 +11,20 @@ En el futuro se implementarán **WebSockets**.
 
 [PostgreSQL](https://www.postgresql.org/) en su versión 9.6 o superior y [Go](https://golang.org/) al menos en versión 1.12.
 
-## Instalación
-**Actualizar fichero .env con el nombre de la base de datos, usuario y contraseña.**
-
+## Instalación en local
+### Base de datos
+```
+psql -U postgres
+```
+```
+postgres=# CREATE ROLE javier WITH LOGIN PASSWORD 'javier';
+```
+```
+postgres=# CREATE DATABASE guinote OWNER javier;
+```
+**Actualizar fichero .env con el nombre de la base de datos, usuario y contraseña que introduzcas a continuación.**
+### Dependencias
+**Necesitaréis información de cómo realizar peticiones con JWS introduciendo el BearerToken que obtenéis en el login**
 Se requieren las siguentes dependencias:
 * github.com/go-chi/chi
 
@@ -26,7 +37,7 @@ Se requieren las siguentes dependencias:
 * github.com/dgrijalva/jwt-go
 
 ## Documentación
-La documentación de se irá completando en la sección Wiki del repositorio.
+La documentación de se irá completando en la **sección Wiki** del repositorio.
 En ella se podrá encontrar información de las tecnologías empleadas, formatos de consulta...
 
 ## ¿Quiénes somos?
