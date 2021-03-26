@@ -1,6 +1,6 @@
-module github.com/UNIZAR-30226-2021-11/Backend
+module Backend
 
-go 1.15
+go 1.16
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
