@@ -45,8 +45,8 @@ func (gr *GameRepository) GetAll(ctx context.Context) ([]game.Game, error) {
 	return games, nil
 }
 
-// GetOne returns one started game by name.
-func (gr *GameRepository) GetOne(ctx context.Context, gamename string) (game.Game, error) {
+// GetByName returns one started game by name.
+func (gr *GameRepository) GetByName(ctx context.Context, gamename string) (game.Game, error) {
 	q := `
 	SELECT g.id, g.name, COUNT(pl.id)
 	FROM
@@ -75,7 +75,7 @@ func (gr *GameRepository) GetOne(ctx context.Context, gamename string) (game.Gam
 // GetByUser returns all user ended games.
 func (gr *GameRepository) GetByUser(ctx context.Context, userID uint) ([]game.Game, error) {
 	q := `
-	SELECT g.id, g.name, g.end_date, pa.winned
+	SELECT g.id, g.name, g.end_date, pa.winned, pa.game_points
 	FROM
 		games g
 			INNER JOIN pairs pa
@@ -98,7 +98,7 @@ func (gr *GameRepository) GetByUser(ctx context.Context, userID uint) ([]game.Ga
 	var games []game.Game
 	for rows.Next() {
 		var g game.Game
-		rows.Scan(&g.ID, &g.Name, &g.EndDate, &g.Winned)
+		rows.Scan(&g.ID, &g.Name, &g.EndDate, &g.Winned, &g.Points)
 		games = append(games, g)
 	}
 

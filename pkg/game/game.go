@@ -9,6 +9,7 @@ type Game struct {
 	Public   	 bool		`json:"public,omitempty"`
 	PlayersCount int 		`json:"players_count,omitempty"`
 	Winned 		 bool		`json:"winned,omitempty"`
+	Points		 int 		`json:"points,omitempty"`
 	CreationDate time.Time 	`json:"creation_date,omitempty"`
 	EndDate		 time.Time 	`json:"end_date,omitempty"`
 }

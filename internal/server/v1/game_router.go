@@ -58,19 +58,41 @@ func (gr *GameRouter) GetAllHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"games": posts})
 }
 
+//GetByUserHandler response all ended games by user
+func (gr *GameRouter) GetByUserHandler(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "userId")
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx := r.Context()
+	games, err := gr.Repository.GetByUser(ctx, uint(userID))
+	if err != nil {
+		response.HTTPError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, response.Map{"games": games})
+}
+
+
+
 // Routes returns game router with each endpoint.
 func (gr *GameRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Authorizator)
 
-	//r.Get("/user/{userId}", gr.GetByUserHandler)
+	r.Get("/user/{userId}", gr.GetByUserHandler)
 
 	r.Get("/", gr.GetAllHandler)
 
 	r.Post("/{userId}", gr.CreateHandler)
 	//
-	//r.Get("/{id}", gr.GetOneHandler)
+	//r.Get("/{name}", gr.GetByName)
 	//
 	//r.Put("/{id}", gr.UpdateHandler)
 	//
