@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"Backend/pkg/game"
 )
@@ -44,8 +45,8 @@ func (gr *GameRepository) GetAll(ctx context.Context) ([]game.Game, error) {
 	return games, nil
 }
 
-// GetOne returns one started game by name.
-func (gr *GameRepository) GetOne(ctx context.Context, gamename string) (game.Game, error) {
+// GetByName returns one started game by name.
+func (gr *GameRepository) GetByName(ctx context.Context, gamename string) (game.Game, error) {
 	q := `
 	SELECT g.id, g.name, COUNT(pl.id)
 	FROM
@@ -74,7 +75,7 @@ func (gr *GameRepository) GetOne(ctx context.Context, gamename string) (game.Gam
 // GetByUser returns all user ended games.
 func (gr *GameRepository) GetByUser(ctx context.Context, userID uint) ([]game.Game, error) {
 	q := `
-	SELECT g.id, g.name, g.end_date, pa.winned
+	SELECT g.id, g.name, g.end_date, pa.winned, pa.game_points
 	FROM
 		games g
 			INNER JOIN pairs pa
@@ -97,7 +98,7 @@ func (gr *GameRepository) GetByUser(ctx context.Context, userID uint) ([]game.Ga
 	var games []game.Game
 	for rows.Next() {
 		var g game.Game
-		rows.Scan(&g.ID, &g.Name, &g.EndDate, &g.Winned)
+		rows.Scan(&g.ID, &g.Name, &g.EndDate, &g.Winned, &g.Points)
 		games = append(games, g)
 	}
 
@@ -105,9 +106,72 @@ func (gr *GameRepository) GetByUser(ctx context.Context, userID uint) ([]game.Ga
 
 }
 
-// Create adds a new game.
-func (gr *GameRepository) Create(ctx context.Context, game *game.Game) error {
-	//TODO
+// Create adds and joins a new game.
+func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint) error {
+	// GAMES
+	q := `
+	INSERT INTO games(name, public, creation_date)
+		VALUES ($1, $2, $3)
+		RETURNING id;
+	`
+
+	stmt, err := gr.Data.DB.PrepareContext(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, g.Name, g.Public, time.Now())
+
+	err = row.Scan(&g.ID)
+	if err != nil {
+		return err
+	}
+	g.PlayersCount = 1
+
+	// PAIRS
+	var pairID int
+	q = `
+	INSERT INTO pairs(game_id)
+		VALUES ($1)
+		RETURNING id;
+	`
+	stmt, err = gr.Data.DB.PrepareContext(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	row = stmt.QueryRowContext(ctx, g.ID)
+
+	err = row.Scan(&pairID)
+	if err != nil {
+		return err
+	}
+
+	// PLAYERS
+	var playerID uint
+	q = `
+	INSERT INTO players(user_id, pair_id)
+		VALUES ($1, $2)
+		RETURNING id;
+	`
+	stmt, err = gr.Data.DB.PrepareContext(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	row = stmt.QueryRowContext(ctx, userID, pairID)
+
+	err = row.Scan(&playerID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
