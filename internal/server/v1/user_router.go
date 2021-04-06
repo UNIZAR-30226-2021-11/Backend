@@ -136,7 +136,7 @@ func (ur *UserRouter) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, r, http.StatusOK, response.Map{"token": token})
+	response.JSON(w, r, http.StatusOK, response.Map{"token": token, "user": storedUser})
 }
 
 // Routes returns user router with each endpoint.
