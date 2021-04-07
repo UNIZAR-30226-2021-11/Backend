@@ -19,5 +19,13 @@ func New() http.Handler {
 
 	r.Mount("/users", ur.Routes())
 
+	gr := &GameRouter{
+		Repository: &data.GameRepository{
+			Data: data.New(),
+		},
+	}
+
+	r.Mount("/games", gr.Routes())
+
 	return r
 }
