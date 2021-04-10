@@ -2,20 +2,20 @@ package server
 
 import (
 	v1 "Backend/internal/server/v1"
+	"Backend/pkg/events"
 	"github.com/gorilla/websocket"
 	"log"
-	"time"
 )
 
 const channelBufSize = 100
 
 // Client struct holds client-specific variables.
 type Client struct {
-	id     uint32
+	ID     uint32
 	ws     *websocket.Conn
 	ch     chan *[]byte
 	doneCh chan bool
-	sr 		*v1.SimulationRouter
+	sr     *v1.SimulationRouter
 }
 
 // NewClient initializes a new Client struct with given websocket.
@@ -27,7 +27,7 @@ func NewClient(ws *websocket.Conn, sr *v1.SimulationRouter) *Client {
 	ch := make(chan *[]byte, channelBufSize)
 	doneCh := make(chan bool)
 
-	return &Client{sr.idManager.NextPlayerId(), ws, ch, doneCh, sr}
+	return &Client{sr.IdManager.NextPlayerId(), ws, ch, doneCh, sr}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -40,7 +40,7 @@ func (c *Client) SendMessage(bytes *[]byte) {
 	select {
 	case c.ch <- bytes:
 	default:
-		c.sr.monitor.AddDroppedMessage()
+		//c.sr.monitor.AddDroppedMessage()
 	}
 }
 
@@ -69,15 +69,15 @@ func (c *Client) listenWrite() {
 		select {
 
 		case bytes := <-c.ch:
-			before := time.Now()
+			//before := time.Now()
 			err := c.ws.WriteMessage(websocket.BinaryMessage, *bytes)
-			after := time.Now()
+			//after := time.Now()
 
 			if err != nil {
 				log.Println(err)
 			} else {
-				elapsed := after.Sub(before)
-				c.sr.monitor.AddSendTime(elapsed)
+				//elapsed := after.Sub(before)
+				//c.sr.monitor.AddSendTime(elapsed)
 			}
 
 		case <-c.doneCh:
@@ -115,7 +115,7 @@ func (c *Client) readFromWebSocket() {
 		log.Println(err)
 
 		c.doneCh <- true
-		c.server.eventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.id})
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
 	} else if messageType != websocket.BinaryMessage {
 		log.Println("Non binary message recived, ignoring")
 	} else {
@@ -123,3 +123,25 @@ func (c *Client) readFromWebSocket() {
 	}
 }
 
+func (c *Client) unmarshalUserInput(data []byte) {
+	//protoUserMessage := &pb.UserMessage{}
+	//if err := proto.Unmarshal(data, protoUserMessage); err != nil {
+	//	log.Fatalln("Failed to unmarshal UserInput:", err)
+	//	return
+	//}
+	//
+	//switch x := protoUserMessage.Content.(type) {
+	//case *pb.UserMessage_UserAction:
+	//	userInputEvent := events.UserInputFromProto(protoUserMessage.GetUserAction(), c.id)
+	//	c.server.eventsDispatcher.FireUserInput(userInputEvent)
+	//case *pb.UserMessage_TargetAngle:
+	//	targetAngleEvent := events.TargetAngleFromProto(protoUserMessage.GetTargetAngle(), c.id)
+	//	c.server.eventsDispatcher.FireTargetAngle(targetAngleEvent)
+	//case *pb.UserMessage_JoinGame:
+	//	c.tryToJoinGame(protoUserMessage.GetJoinGame())
+	//case *pb.UserMessage_Ping:
+	//	c.sendPong(protoUserMessage.GetPing().Id)
+	//default:
+	//	log.Fatalln("Unknown message type %T", x)
+	//}
+}

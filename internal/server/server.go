@@ -1,7 +1,9 @@
 package server
 
 import (
+	"Backend/internal/data"
 	v1 "Backend/internal/server/v1"
+	"Backend/pkg/events"
 	"log"
 	"net/http"
 	"time"
@@ -25,7 +27,9 @@ func New(port string) (*Server, error) {
 
 	r.Mount("/api/v1", v1.New())
 
-	r.HandleFunc("/simulation", handler)
+	sr := v1.NewSimulationRouter(events.NewEventDispatcher(), data.NewIdManager())
+
+	r.HandleFunc("/simulation", sr.Handler)
 
 	serv := &http.Server{
 		Addr:         ":" + port,
