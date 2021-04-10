@@ -1,21 +1,41 @@
 package state
 
-type player struct {
+type Player struct {
 	// TODO elegir otro TAD
-	cards [6]*card
+	cards   [6]*Card
+	id      int
+	pair    int
+	canPlay bool
 }
 
-// Plays the card and compacts it
-func (p *player) playCard(id int) {
-	p.cards[id] = nil
-	for i := id; i < len(p.cards)-1; i++{
-		p.cards[i] = p.cards[i +1]
+func CreatePlayer(id int, pair int) *Player {
+	return &Player{
+		id:   id,
+		pair: pair,
+	}
+}
+
+// Plays the Card and compacts it
+func (p *Player) playCard(cardNumber int) {
+	p.cards[cardNumber] = nil
+	for i := cardNumber; i < len(p.cards)-1; i++ {
+		p.cards[i] = p.cards[i+1]
 	}
 	p.cards[5] = nil
 }
 
-// Deals a card to the player
-func (p *player) dealCard(card *card) {
+// Deals a Card to the Player
+func (p *Player) dealCard(card *Card) {
 	p.cards[5] = card
 }
 
+// sameId check if is the Player with this id
+func (p *Player) sameId(id int) bool {
+	return p.id == id
+}
+
+func (p *Player) DealCards(cards []*Card) {
+	for i, card := range cards {
+		p.cards[i] = card
+	}
+}
