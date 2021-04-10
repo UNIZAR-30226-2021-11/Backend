@@ -13,6 +13,7 @@ import (
 // Server is a base server configuration.
 type Server struct {
 	server *http.Server
+
 }
 
 // New inicialize a new server with configuration.
@@ -23,6 +24,8 @@ func New(port string) (*Server, error) {
 	r.Use(middleware.Recoverer)
 
 	r.Mount("/api/v1", v1.New())
+
+	r.HandleFunc("/simulation", handler)
 
 	serv := &http.Server{
 		Addr:         ":" + port,
@@ -35,6 +38,8 @@ func New(port string) (*Server, error) {
 
 	return &server, nil
 }
+
+
 
 // Close server resources.
 func (serv *Server) Close() error {
