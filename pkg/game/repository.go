@@ -4,6 +4,7 @@ import "context"
 
 // Repository handle the CRUD operations with Games.
 type Repository interface {
+	GetOne(ctx context.Context, gameID uint) (Game, error)
 	GetAll(ctx context.Context) ([]Game, error)
 	GetByName(ctx context.Context, gamename string) (Game, error)
 	GetByUser(ctx context.Context, userID uint) ([]Game, error)
