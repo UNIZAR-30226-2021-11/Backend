@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"Backend/pkg/events"
+	"fmt"
 )
 
 type Updater struct {
@@ -19,7 +20,7 @@ func (updater *Updater) HandleNewGame() {
 }
 
 func (updater *Updater) HandleUserJoined(userJoinedEvent *events.UserJoined) {
-
+	fmt.Print("User joined!")
 }
 
 func (updater *Updater) HandleUserLeft(userLeftEvent *events.UserLeft) {

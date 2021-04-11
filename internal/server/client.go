@@ -1,7 +1,6 @@
 package server
 
 import (
-	v1 "Backend/internal/server/v1"
 	"Backend/pkg/events"
 	"github.com/gorilla/websocket"
 	"log"
@@ -15,11 +14,11 @@ type Client struct {
 	ws     *websocket.Conn
 	ch     chan *[]byte
 	doneCh chan bool
-	sr     *v1.SimulationRouter
+	sr     *SimulationRouter
 }
 
 // NewClient initializes a new Client struct with given websocket.
-func NewClient(ws *websocket.Conn, sr *v1.SimulationRouter) *Client {
+func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 	if ws == nil {
 		panic("ws cannot be nil")
 	}

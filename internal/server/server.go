@@ -1,9 +1,6 @@
 package server
 
 import (
-	"Backend/internal/data"
-	v1 "Backend/internal/server/v1"
-	"Backend/pkg/events"
 	"log"
 	"net/http"
 	"time"
@@ -14,20 +11,20 @@ import (
 
 // Server is a base server configuration.
 type Server struct {
-	server *http.Server
-
+	server 				*http.Server
+	simulationRouter 	SimulationRouter
 }
 
-// New inicialize a new server with configuration.
-func New(port string) (*Server, error) {
+// NewServer inicialize a new server with configuration.
+func NewServer(port string) (*Server, error) {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Mount("/api/v1", v1.New())
+	r.Mount("/api/v1", NewApi())
 
-	sr := v1.NewSimulationRouter(events.NewEventDispatcher(), data.NewIdManager())
+	sr := NewSimulationRouter()
 
 	r.HandleFunc("/simulation", sr.Handler)
 
