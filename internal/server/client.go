@@ -2,6 +2,7 @@ package server
 
 import (
 	"Backend/pkg/events"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 )
@@ -115,7 +116,7 @@ func (c *Client) readFromWebSocket() {
 
 		c.doneCh <- true
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
-	} else if messageType != websocket.BinaryMessage {
+	} else if messageType != websocket.TextMessage {
 		log.Println("Non binary message recived, ignoring")
 	} else {
 		c.unmarshalUserInput(data)
@@ -123,24 +124,42 @@ func (c *Client) readFromWebSocket() {
 }
 
 func (c *Client) unmarshalUserInput(data []byte) {
-	//protoUserMessage := &pb.UserMessage{}
-	//if err := proto.Unmarshal(data, protoUserMessage); err != nil {
-	//	log.Fatalln("Failed to unmarshal UserInput:", err)
-	//	return
-	//}
+	var event events.Event
+	err := json.Unmarshal(data, &event)
+	if err != nil {
+		log.Fatalln("Failed to unmarshal UserInput:", err)
+		return
+	}
+
+	switch event.EventType {
+
+	case events.USER_JOINED:
+		e := events.UserJoined{
+			ClientID: event.PlayerID,
+			GameID:   event.GameID,
+			UserName: "usuario-prueba",
+		}
+		c.tryToJoinGame(&e)
+	case events.USER_LEFT:
+
+	default:
+		log.Fatalln("Unknown message type %T", event.EventType)
+	}
+}
+
+func (c *Client) tryToJoinGame(event *events.UserJoined) {
+	log.Printf("User %d (%s) trying to join game %d\n",event.ClientID, event.UserName, event.GameID)
+
+	//username := strings.TrimSpace(joinGameMsg.Username)
+	//ok, err := c.validateUser(username)
 	//
-	//switch x := protoUserMessage.Content.(type) {
-	//case *pb.UserMessage_UserAction:
-	//	userInputEvent := events.UserInputFromProto(protoUserMessage.GetUserAction(), c.id)
-	//	c.server.eventsDispatcher.FireUserInput(userInputEvent)
-	//case *pb.UserMessage_TargetAngle:
-	//	targetAngleEvent := events.TargetAngleFromProto(protoUserMessage.GetTargetAngle(), c.id)
-	//	c.server.eventsDispatcher.FireTargetAngle(targetAngleEvent)
-	//case *pb.UserMessage_JoinGame:
-	//	c.tryToJoinGame(protoUserMessage.GetJoinGame())
-	//case *pb.UserMessage_Ping:
-	//	c.sendPong(protoUserMessage.GetPing().Id)
-	//default:
-	//	log.Fatalln("Unknown message type %T", x)
+	//if ok {
+	//	c.server.userNameRegistry.AddUserName(c.id, username)
+	//	c.sendJoinGameAckMessage(&pb.JoinGameAck{Success: true})
+	//	c.server.eventsDispatcher.FireUserJoined(&events.UserJoined{ClientID: c.id, UserName: username})
+	//} else {
+	//	c.sendJoinGameAckMessage(
+	//		&pb.JoinGameAck{Success: false, Error: err.Error()},
+	//	)
 	//}
 }

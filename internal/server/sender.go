@@ -3,7 +3,7 @@ package server
 import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
-	"fmt"
+	"log"
 )
 
 type Sender struct {
@@ -20,6 +20,6 @@ func NewSender(sr *SimulationRouter, userNameRegistry *data.UserNamesRegistry) *
 
 func (sender *Sender) HandleUserConnected(userConnectedEvent *events.UserConnected) {
 	//sender.sendConstantMessage(userConnectedEvent.ClientID)
-	fmt.Print("User connected!")
+	log.Println("User connected!")
 	sender.sr.SendToClient(userConnectedEvent.ClientID, "hello")
 }
