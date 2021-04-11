@@ -32,10 +32,6 @@ func main() {
 			PlayerID:  1,
 			EventType: 0,
 		}
-		//j, err := json.Marshal(event)
-		//if err != nil {
-		//	return
-		//}
 		_  = c.WriteJSON(event)
 	}()
 
