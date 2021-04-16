@@ -133,6 +133,13 @@ func (c *Client) unmarshalUserInput(data []byte) {
 
 	switch event.EventType {
 
+	case events.GAME_CREATE:
+		e := &events.GameCreate{
+			ClientID: event.PlayerID,
+			GameID:   event.GameID,
+		}
+		c.sr.EventsDispatcher.FireGameCreate(e)
+
 	case events.USER_JOINED:
 		e := events.UserJoined{
 			ClientID: event.PlayerID,
@@ -140,7 +147,6 @@ func (c *Client) unmarshalUserInput(data []byte) {
 			UserName: "usuario-prueba",
 		}
 		c.tryToJoinGame(&e)
-	case events.USER_LEFT:
 
 	default:
 		log.Fatalln("Unknown message type %T", event.EventType)

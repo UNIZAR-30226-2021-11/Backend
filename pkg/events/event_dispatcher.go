@@ -18,12 +18,28 @@ import (
 
 // LISTENER INTERFACES
 
-type UserConnectedListener interface {
-	HandleUserConnected(*UserConnected)
+type GameCreateListener interface {
+	HandleGameCreate(*GameCreate)
+}
+
+type UserJoinedListener interface {
+	HandleUserJoined(*UserJoined)
 }
 
 type UserLeftListener interface {
 	HandleUserLeft(*UserLeft)
+}
+
+type CardPlayedListener interface {
+	HandleCardPlayed(*CardPlayed)
+}
+
+type CardChangedListener interface {
+	HandleCardChanged(*CardChanged)
+}
+
+type SingListener interface {
+	HandleSing(*Sing)
 }
 
 // ##############################
@@ -42,14 +58,25 @@ type eventHandler interface {
 	handle()
 }
 
-type userConnectedHandler struct {
-	event          *UserConnected
-	eventListeners []UserConnectedListener
+type gameCreateHandler struct {
+	event          *GameCreate
+	eventListeners []GameCreateListener
 }
 
-func (handler *userConnectedHandler) handle() {
+func (handler *gameCreateHandler) handle() {
 	for _, listener := range handler.eventListeners {
-		listener.HandleUserConnected(handler.event)
+		listener.HandleGameCreate(handler.event)
+	}
+}
+
+type userJoinedHandler struct {
+	event          *UserJoined
+	eventListeners []UserJoinedListener
+}
+
+func (handler *userJoinedHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleUserJoined(handler.event)
 	}
 }
 
@@ -64,6 +91,39 @@ func (handler *userLeftHandler) handle() {
 	}
 }
 
+type cardPlayedHandler struct {
+	event          *CardPlayed
+	eventListeners []CardPlayedListener
+}
+
+func (handler *cardPlayedHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleCardPlayed(handler.event)
+	}
+}
+
+type cardChangedHandler struct {
+	event          *CardChanged
+	eventListeners []CardChangedListener
+}
+
+func (handler *cardChangedHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleCardChanged(handler.event)
+	}
+}
+
+type singHandler struct {
+	event          *Sing
+	eventListeners []SingListener
+}
+
+func (handler *singHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleSing(handler.event)
+	}
+}
+
 // EVENT DISPATCHER
 
 type EventDispatcher struct {
@@ -75,9 +135,17 @@ type EventDispatcher struct {
 
 	// LISTENER LISTS
 
-	userConnectedListeners []UserConnectedListener
+	gameCreateListeners []GameCreateListener
+
+	userJoinedListeners []UserJoinedListener
 
 	userLeftListeners []UserLeftListener
+
+	cardPlayedListeners []CardPlayedListener
+
+	cardChangedListeners []CardChangedListener
+
+	singListeners []SingListener
 }
 
 // EVENT DISPATCHER CONSTRUCTOR
@@ -92,9 +160,17 @@ func NewEventDispatcher() *EventDispatcher {
 
 		// LISTENER LISTS
 
-		userConnectedListeners: []UserConnectedListener{},
+		gameCreateListeners: []GameCreateListener{},
+
+		userJoinedListeners: []UserJoinedListener{},
 
 		userLeftListeners: []UserLeftListener{},
+
+		cardPlayedListeners: []CardPlayedListener{},
+
+		cardChangedListeners: []CardChangedListener{},
+
+		singListeners: []SingListener{},
 	}
 }
 
@@ -136,18 +212,35 @@ func (dispatcher *EventDispatcher) QueuesFilling() map[int]QueueFilling {
 	return filling
 }
 
-// UserConnected
+// GameCreate
 
-func (dispatcher *EventDispatcher) RegisterUserConnectedListener(listener UserConnectedListener) {
+func (dispatcher *EventDispatcher) RegisterGameCreateListener(listener GameCreateListener) {
 	dispatcher.panicWhenEventLoopRunning()
 
-	dispatcher.userConnectedListeners = append(dispatcher.userConnectedListeners, listener)
+	dispatcher.gameCreateListeners = append(dispatcher.gameCreateListeners, listener)
 }
 
-func (dispatcher *EventDispatcher) FireUserConnected(event *UserConnected) {
-	handler := &userConnectedHandler{
+func (dispatcher *EventDispatcher) FireGameCreate(event *GameCreate) {
+	handler := &gameCreateHandler{
 		event:          event,
-		eventListeners: dispatcher.userConnectedListeners,
+		eventListeners: dispatcher.gameCreateListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// UserJoined
+
+func (dispatcher *EventDispatcher) RegisterUserJoinedListener(listener UserJoinedListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.userJoinedListeners = append(dispatcher.userJoinedListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireUserJoined(event *UserJoined) {
+	handler := &userJoinedHandler{
+		event:          event,
+		eventListeners: dispatcher.userJoinedListeners,
 	}
 
 	dispatcher.priority2EventsQueue <- handler
@@ -165,6 +258,57 @@ func (dispatcher *EventDispatcher) FireUserLeft(event *UserLeft) {
 	handler := &userLeftHandler{
 		event:          event,
 		eventListeners: dispatcher.userLeftListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// CardPlayed
+
+func (dispatcher *EventDispatcher) RegisterCardPlayedListener(listener CardPlayedListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.cardPlayedListeners = append(dispatcher.cardPlayedListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireCardPlayed(event *CardPlayed) {
+	handler := &cardPlayedHandler{
+		event:          event,
+		eventListeners: dispatcher.cardPlayedListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// CardChanged
+
+func (dispatcher *EventDispatcher) RegisterCardChangedListener(listener CardChangedListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.cardChangedListeners = append(dispatcher.cardChangedListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireCardChanged(event *CardChanged) {
+	handler := &cardChangedHandler{
+		event:          event,
+		eventListeners: dispatcher.cardChangedListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// Sing
+
+func (dispatcher *EventDispatcher) RegisterSingListener(listener SingListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.singListeners = append(dispatcher.singListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireSing(event *Sing) {
+	handler := &singHandler{
+		event:          event,
+		eventListeners: dispatcher.singListeners,
 	}
 
 	dispatcher.priority2EventsQueue <- handler

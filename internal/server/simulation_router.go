@@ -12,11 +12,12 @@ import (
 
 type SimulationRouter struct {
 
-	clients          map[uint32]*Client
-	EventsDispatcher *events.EventDispatcher
-	IdManager        *data.IdManager
-	userNameRegistry *data.UserNamesRegistry
-	upgrader         *websocket.Upgrader
+	clients          		map[uint32]*Client
+	EventsDispatcher 		*events.EventDispatcher
+	IdManager        		*data.IdManager
+	userNameRegistry 		*data.UserNamesRegistry
+	upgrader         		*websocket.Upgrader
+	simulationRepository	*data.SimulationRepository
 
 }
 
@@ -36,11 +37,14 @@ func NewSimulationRouter() *SimulationRouter {
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			}},
+		simulationRepository: data.NewSimulationRepository(),
 	}
 
-	//updater := simulation.NewUpdater()
-	sender := NewSender(sr, userNameRegistry)
-	eventDispatcher.RegisterUserConnectedListener(sender)
+	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
+	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
+	eventDispatcher.RegisterCardPlayedListener(sr.simulationRepository)
+	eventDispatcher.RegisterCardChangedListener(sr.simulationRepository)
+	eventDispatcher.RegisterSingListener(sr.simulationRepository)
 
 	go eventDispatcher.RunEventLoop()
 
@@ -57,7 +61,8 @@ func (sr *SimulationRouter) Handler (w http.ResponseWriter, r *http.Request) {
 	client := NewClient(conn, sr)
 	sr.clients[client.ID] = client
 
-	sr.EventsDispatcher.FireUserConnected(&events.UserConnected{ClientID: client.ID})
+	//sr.EventsDispatcher.FireUserConnected(&events.UserConnected{ClientID: client.ID})
+	sr.SendToClient(client.ID, client.ID)
 
 	log.Println("Added new client. Now", len(sr.clients), "clients connected.")
 	client.Listen()

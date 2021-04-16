@@ -1,9 +1,11 @@
 package simulation
 
-import "Backend/pkg/state"
+import (
+	"Backend/pkg/state"
+)
 
-// game has 10 rounds
-type game struct {
+// Game has 10 rounds
+type Game struct {
 	players      *state.Ring
 	rounds       [10]*round
 	triumph      string
@@ -21,21 +23,28 @@ type game struct {
 	newCard <-chan *state.Card
 }
 
+func NewGame(chan *state.Player) *Game {
+	return &Game{
+		//TODO
+	}
+
+}
+
 //Starts a new round
-func (g *game) newRound(firstPlayer *state.Player) {
+func (g *Game) newRound(firstPlayer *state.Player) {
 
 	g.currentRound++
 	g.rounds[g.currentRound] = NewRound(g.triumph)
 	g.players.SetFirstPlayer(firstPlayer)
 
 }
-func (g *game) cardPlayed(c *state.Card) {
+func (g *Game) cardPlayed(c *state.Card) {
 	g.rounds[g.currentRound].playedCard(c)
 
 }
 
 // Process a new card played
-func (g *game) processCard(c *state.Card) {
+func (g *Game) processCard(c *state.Card) {
 
 	g.cardPlayed(c)
 	// Cartas jugadas
@@ -45,10 +54,10 @@ func (g *game) processCard(c *state.Card) {
 	// Repartir cartas
 }
 
-// StartGame starts a new game with 10 rounds
-func InitGame(p []*state.Player, triumph string) (g *game) {
+// StartGame starts a new Game with 10 rounds
+func InitGame(p []*state.Player, triumph string) (g *Game) {
 
-	g = &game{
+	g = &Game{
 		players:      state.NewPlayerRing(p),
 		triumph:      triumph,
 		currentRound: 0,
@@ -63,9 +72,12 @@ func InitGame(p []*state.Player, triumph string) (g *game) {
 	return g
 }
 
-func (g *game) Start() {
+func (g *Game) Start() {
 
 	for c := range g.newCard {
 		g.processCard(c)
 	}
 }
+
+//TODO: función que me devuelva el estado del juego como struct en fto. JSON
+//func (g *Game) GetState

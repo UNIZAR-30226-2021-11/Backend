@@ -21,9 +21,12 @@ const (
 
 var supportedEvents = []EventType{
 	//NewEventType("TimeTick", 1),
-	NewEventType("UserConnected", 2),
+	NewEventType("GameCreate", 2),
 	NewEventType("UserJoined", 2),
 	NewEventType("UserLeft", 2),
+	NewEventType("CardPlayed", 2),
+	NewEventType("CardChanged", 2),
+	NewEventType("Sing", 2),
 	//NewEventType("UserInput", 3),
 	//NewEventType("ScoreSent", 3),
 }

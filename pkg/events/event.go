@@ -1,8 +1,12 @@
 package events
 
 const (
-	USER_JOINED 	= 0
-	USER_LEFT		= 1
+	GAME_CREATE     = 0
+	USER_JOINED 	= 1
+	USER_LEFT		= 2
+	CARD_PLAYED 	= 3
+	CARD_CHANGED    = 4
+	SING 			= 5
 )
 
 

@@ -3,14 +3,14 @@ package state
 type Player struct {
 	// TODO elegir otro TAD
 	cards   [6]*Card
-	id      int
+	ID      int
 	pair    int
 	canPlay bool
 }
 
 func CreatePlayer(id int, pair int) *Player {
 	return &Player{
-		id:   id,
+		ID:   id,
 		pair: pair,
 	}
 }
@@ -29,9 +29,9 @@ func (p *Player) dealCard(card *Card) {
 	p.cards[5] = card
 }
 
-// sameId check if is the Player with this id
+// sameId check if is the Player with this ID
 func (p *Player) sameId(id int) bool {
-	return p.id == id
+	return p.ID == id
 }
 
 func (p *Player) DealCards(cards []*Card) {

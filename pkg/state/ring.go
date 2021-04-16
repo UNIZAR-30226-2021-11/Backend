@@ -48,10 +48,10 @@ func NewPlayerRing(players []*Player) *Ring {
 }
 
 // SetFirstPlayer sets the initial Player of the round
-// The id must be a correct identifier
+// The ID must be a correct identifier
 func (r *Ring) SetFirstPlayer(p *Player) {
 	//
-	for !r.ringNode.p.sameId(p.id) {
+	for !r.ringNode.p.sameId(p.ID) {
 		r.ringNode = r.next
 	}
 }
