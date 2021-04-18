@@ -7,6 +7,7 @@ const (
 	CARD_PLAYED 	= 3
 	CARD_CHANGED    = 4
 	SING 			= 5
+	STATE_CHANGED	= 6
 )
 
 

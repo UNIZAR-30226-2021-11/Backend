@@ -37,9 +37,10 @@ func NewSimulationRouter() *SimulationRouter {
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			}},
-		simulationRepository: data.NewSimulationRepository(),
+		simulationRepository: data.NewSimulationRepository(eventDispatcher),
 	}
 
+	eventDispatcher.RegisterStateChangedListener(sr)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
 	eventDispatcher.RegisterCardPlayedListener(sr.simulationRepository)
@@ -81,4 +82,12 @@ func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
 		log.Printf("Client %d not found\n", clientID)
 		return
 	}
+}
+
+func (sr *SimulationRouter) HandleStateChanged (stateChangedEvent *events.StateChanged) {
+	clientsID := stateChangedEvent.ClientsID
+	for _, c := range clientsID {
+		sr.SendToClient(c, stateChangedEvent.Game)
+	}
+
 }

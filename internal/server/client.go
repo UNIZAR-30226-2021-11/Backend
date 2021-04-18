@@ -141,31 +141,14 @@ func (c *Client) unmarshalUserInput(data []byte) {
 		c.sr.EventsDispatcher.FireGameCreate(e)
 
 	case events.USER_JOINED:
-		e := events.UserJoined{
+		e := &events.UserJoined{
 			ClientID: event.PlayerID,
 			GameID:   event.GameID,
 			UserName: "usuario-prueba",
 		}
-		c.tryToJoinGame(&e)
+		c.sr.EventsDispatcher.FireUserJoined(e)
 
 	default:
 		log.Fatalln("Unknown message type %T", event.EventType)
 	}
-}
-
-func (c *Client) tryToJoinGame(event *events.UserJoined) {
-	log.Printf("User %d (%s) trying to join game %d\n",event.ClientID, event.UserName, event.GameID)
-
-	//username := strings.TrimSpace(joinGameMsg.Username)
-	//ok, err := c.validateUser(username)
-	//
-	//if ok {
-	//	c.server.userNameRegistry.AddUserName(c.id, username)
-	//	c.sendJoinGameAckMessage(&pb.JoinGameAck{Success: true})
-	//	c.server.eventsDispatcher.FireUserJoined(&events.UserJoined{ClientID: c.id, UserName: username})
-	//} else {
-	//	c.sendJoinGameAckMessage(
-	//		&pb.JoinGameAck{Success: false, Error: err.Error()},
-	//	)
-	//}
 }

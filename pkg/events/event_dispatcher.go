@@ -18,6 +18,10 @@ import (
 
 // LISTENER INTERFACES
 
+type StateChangedListener interface {
+	HandleStateChanged(*StateChanged)
+}
+
 type GameCreateListener interface {
 	HandleGameCreate(*GameCreate)
 }
@@ -56,6 +60,17 @@ const (
 
 type eventHandler interface {
 	handle()
+}
+
+type stateChangedHandler struct {
+	event          *StateChanged
+	eventListeners []StateChangedListener
+}
+
+func (handler *stateChangedHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleStateChanged(handler.event)
+	}
 }
 
 type gameCreateHandler struct {
@@ -135,6 +150,8 @@ type EventDispatcher struct {
 
 	// LISTENER LISTS
 
+	stateChangedListeners []StateChangedListener
+
 	gameCreateListeners []GameCreateListener
 
 	userJoinedListeners []UserJoinedListener
@@ -159,6 +176,8 @@ func NewEventDispatcher() *EventDispatcher {
 		priority2EventsQueue: make(chan eventHandler, eventQueuesCapacity),
 
 		// LISTENER LISTS
+
+		stateChangedListeners: []StateChangedListener{},
 
 		gameCreateListeners: []GameCreateListener{},
 
@@ -210,6 +229,23 @@ func (dispatcher *EventDispatcher) QueuesFilling() map[int]QueueFilling {
 	filling[2] = QueueFilling{len(dispatcher.priority2EventsQueue), eventQueuesCapacity}
 
 	return filling
+}
+
+// StateChanged
+
+func (dispatcher *EventDispatcher) RegisterStateChangedListener(listener StateChangedListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.stateChangedListeners = append(dispatcher.stateChangedListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireStateChanged(event *StateChanged) {
+	handler := &stateChangedHandler{
+		event:          event,
+		eventListeners: dispatcher.stateChangedListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
 }
 
 // GameCreate

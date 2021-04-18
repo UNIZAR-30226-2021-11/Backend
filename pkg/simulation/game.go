@@ -23,6 +23,9 @@ type Game struct {
 	newCard <-chan *state.Card
 }
 
+// Mejor un constructor, y una vez tenga el objeto llamo a startGame() p.e.
+// El triunfo mejor genéralo aleatoriamente aquí, no tiene sentido pasarlo desde
+//   el evento de creación de partida
 func NewGame(chan *state.Player) *Game {
 	return &Game{
 		//TODO
@@ -79,5 +82,11 @@ func (g *Game) Start() {
 	}
 }
 
-//TODO: función que me devuelva el estado del juego como struct en fto. JSON
-//func (g *Game) GetState
+func (g *Game) GetPlayersID() ([]uint32) {
+	//TODO
+	return []uint32{1,2,3,4}
+}
+
+func (g *Game) HandleCardPlayed(clientID uint32, card *state.Card) {
+	//TODO
+}

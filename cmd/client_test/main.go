@@ -25,15 +25,27 @@ func main() {
 		}
 	}()
 
-	go func() {
-		time.Sleep(2 * time.Second)
-		event := events.Event{
-			GameID:    1,
-			PlayerID:  1,
-			EventType: 0,
-		}
-		_  = c.WriteJSON(event)
-	}()
+	//Create a game
+	time.Sleep(2 * time.Second)
+	event := events.Event{
+		GameID:    1,
+		PlayerID:  1,
+		EventType: 0,
+	}
+	_  = c.WriteJSON(event)
+
+	var i uint32
+	//Join the game
+	for i = 1; i < 5; i++ {
+			time.Sleep(2 * time.Second)
+			event := events.Event{
+				GameID:    1,
+				PlayerID:  i,
+				EventType: 1,
+			}
+			_  = c.WriteJSON(event)
+	}
+
 
 	// Read from stdin and send through websocket
 	scanner := bufio.NewScanner(os.Stdin)

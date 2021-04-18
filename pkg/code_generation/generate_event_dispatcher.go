@@ -21,6 +21,7 @@ const (
 
 var supportedEvents = []EventType{
 	//NewEventType("TimeTick", 1),
+	NewEventType("StateChanged", 2),
 	NewEventType("GameCreate", 2),
 	NewEventType("UserJoined", 2),
 	NewEventType("UserLeft", 2),

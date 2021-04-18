@@ -8,13 +8,15 @@ import (
 )
 
 type SimulationRepository struct {
+	eventDispatcher	*events.EventDispatcher
 	futureGames		map[uint32]chan *state.Player
 	games			map[uint32]*simulation.Game
 }
 
-func NewSimulationRepository() *SimulationRepository {
+func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *SimulationRepository {
 	return &SimulationRepository{
-		futureGames:	make(map[uint32](chan *state.Player)),
+		eventDispatcher: eventDispatcher,
+		futureGames:	make(map[uint32]chan *state.Player),
 		games: 			make(map[uint32]*simulation.Game),
 	}
 }
@@ -36,7 +38,14 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 	players := sr.futureGames[gameId]
 
 	if len(players) == 4 {
-		sr.games[gameId] = simulation.NewGame(players)
+		game := simulation.NewGame(players)
+		//game.InitGame()
+		sr.games[gameId] = game
+		event := &events.StateChanged{
+			ClientsID: 	[]uint32{1},
+			Game:   	game,
+		}
+		sr.eventDispatcher.FireStateChanged(event)
 	}
 }
 
@@ -45,7 +54,15 @@ func (sr *SimulationRepository) HandleUserLeft(userLeftEvent events.UserLeft) {
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
-	//TODO
+	gameId := cardPlayedEvent.GameID
+	game := sr.games[gameId]
+
+	game.HandleCardPlayed(cardPlayedEvent.ClientID, cardPlayedEvent.Card)
+	event := &events.StateChanged{
+		ClientsID: 	game.GetPlayersID(),
+		Game:   	game,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
 }
 
 func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardChanged) {
