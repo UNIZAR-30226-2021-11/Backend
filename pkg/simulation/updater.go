@@ -5,7 +5,7 @@ import (
 )
 
 type Updater struct {
-	games map[uint32]*game
+	games map[uint32]*Game
 }
 
 func NewUpdater() *Updater{

@@ -43,6 +43,10 @@ func (d *Deck) Shuffle() {
 	})
 }
 
+func (d *Deck) ChangeCard()  {
+	
+}
+
 // Deals the next card of the deck
 func (d *Deck) DealCard() (c *Card) {
 	c = d.cards[d.top]

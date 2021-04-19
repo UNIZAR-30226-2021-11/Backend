@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="guinote@localhost" uuid="a0827efc-d307-4f00-b719-73e4c3510087">
+    <data-source source="LOCAL" name="guinote@15.188.14.213" uuid="a0827efc-d307-4f00-b719-73e4c3510087">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/guinote</jdbc-url>
+      <jdbc-url>jdbc:postgresql://15.188.14.213:11000/guinote</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="postgres@localhost" uuid="3ad80a7d-abeb-46d3-9281-f9bc8ccaf208">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
 </project>

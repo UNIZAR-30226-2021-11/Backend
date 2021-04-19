@@ -36,7 +36,7 @@ func TestDeck_Shuffle(t *testing.T) {
 			carta := &Card{
 				Suit:   suit,
 				Points: getPoints(c),
-				val:    c,
+				Val:    c,
 			}
 			if !carta.equals(d.cards[i]) {
 				diff++
