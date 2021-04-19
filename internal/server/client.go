@@ -117,7 +117,7 @@ func (c *Client) readFromWebSocket() {
 		c.doneCh <- true
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
 	} else if messageType != websocket.TextMessage {
-		log.Println("Non binary message recived, ignoring")
+		log.Println("Non binary message received, ignoring")
 	} else {
 		c.unmarshalUserInput(data)
 	}

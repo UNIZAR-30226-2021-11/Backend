@@ -43,7 +43,7 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 		sr.games[gameId] = game
 		event := &events.StateChanged{
 			ClientsID: 	[]uint32{1},
-			Game:   	game,
+			Game:   	"esto es el estado del juego",
 		}
 		sr.eventDispatcher.FireStateChanged(event)
 	}
