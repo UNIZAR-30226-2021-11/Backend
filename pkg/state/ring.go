@@ -7,7 +7,7 @@ import (
 
 type Ring struct {
 	*ringNode
-	all   []*Player
+	All   []*Player `json:"players"`
 	start *ringNode
 	end   *ringNode
 }
@@ -29,7 +29,7 @@ func NewPlayerRing(players []*Player) *Ring {
 			}
 			r = Ring{
 				ringNode: &first,
-				all:      players,
+				All:      players,
 			}
 			continue
 		}
@@ -43,7 +43,7 @@ func NewPlayerRing(players []*Player) *Ring {
 			r.next = &first
 		}
 	}
-
+	r.Next()
 	return &r
 }
 
@@ -51,7 +51,7 @@ func NewPlayerRing(players []*Player) *Ring {
 // The ID must be a correct identifier
 func (r *Ring) SetFirstPlayer(p *Player) {
 	//
-	for !r.ringNode.p.sameId(p.ID) {
+	for !r.ringNode.p.sameId(p.Id) {
 		r.ringNode = r.next
 	}
 }

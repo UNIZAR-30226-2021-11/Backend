@@ -5,6 +5,13 @@ import (
 	"testing"
 )
 
+func TestCantar(t *testing.T) {
+	
+}
+
+func TestName(t *testing.T) {
+	
+}
 func TestInitGame(t *testing.T) {
 
 }
