@@ -62,7 +62,7 @@ func (sr *SimulationRouter) Handler (w http.ResponseWriter, r *http.Request) {
 	client := NewClient(conn, sr)
 	sr.clients[client.ID] = client
 
-	//sr.EventsDispatcher.FireUserConnected(&events.UserConnected{ClientID: client.ID})
+	//sr.EventsDispatcher.FireUserConnected(&events.UserConnected{PlayerID: client.ID})
 	sr.SendToClient(client.ID, client.ID)
 
 	log.Println("Added new client. Now", len(sr.clients), "clients connected.")

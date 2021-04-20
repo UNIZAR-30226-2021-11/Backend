@@ -22,16 +22,22 @@ func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *Simulatio
 }
 
 func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCreate) {
-	log.Printf("User %d trying to create game %d\n",gameCreateEvent.ClientID, gameCreateEvent.GameID)
+	log.Printf("User %d trying to create game %d\n",gameCreateEvent.PlayerID, gameCreateEvent.GameID)
 
 	gameId := gameCreateEvent.GameID
 	sr.futureGames[gameId] = make(chan *state.Player, 4)
+
+	sr.eventDispatcher.FireUserJoined(&events.UserJoined{
+		PlayerID: gameCreateEvent.PlayerID,
+		GameID:   gameCreateEvent.GameID,
+		UserName: "usuario de prueba",
+	})
 }
 
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
-		ID:		int(userJoinedEvent.ClientID),
+		ID:		int(userJoinedEvent.PlayerID),
 	}
 
 	sr.futureGames[gameId] <- player

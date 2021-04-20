@@ -135,14 +135,14 @@ func (c *Client) unmarshalUserInput(data []byte) {
 
 	case events.GAME_CREATE:
 		e := &events.GameCreate{
-			ClientID: event.PlayerID,
+			PlayerID: event.PlayerID,
 			GameID:   event.GameID,
 		}
 		c.sr.EventsDispatcher.FireGameCreate(e)
 
 	case events.USER_JOINED:
 		e := &events.UserJoined{
-			ClientID: event.PlayerID,
+			PlayerID: event.PlayerID,
 			GameID:   event.GameID,
 			UserName: "usuario-prueba",
 		}
