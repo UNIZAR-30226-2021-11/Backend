@@ -187,7 +187,6 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 	g.PlayersCount = 1
 
 	// PAIRS
-	var pairID int
 	q = `
 	INSERT INTO pairs(game_id)
 		VALUES ($1)
@@ -205,13 +204,12 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 	//Create pair
 	_ = stmt.QueryRowContext(ctx, g.ID)
 
-	err = row.Scan(&pairID)
+	err = row.Scan(&g.MyPairID)
 	if err != nil {
 		return err
 	}
 
 	// PLAYERS
-	var playerID uint
 	q = `
 	INSERT INTO players(user_id, pair_id)
 		VALUES ($1, $2)
@@ -224,9 +222,9 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 
 	defer stmt.Close()
 
-	row = stmt.QueryRowContext(ctx, userID, pairID)
+	row = stmt.QueryRowContext(ctx, userID, g.MyPairID)
 
-	err = row.Scan(&playerID)
+	err = row.Scan(&g.MyPlayerID)
 	if err != nil {
 		return err
 	}
