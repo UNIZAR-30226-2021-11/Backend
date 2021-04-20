@@ -1,6 +1,8 @@
 package data
 
 import (
+	"Backend/pkg/pair"
+	"Backend/pkg/user"
 	"context"
 	"time"
 
@@ -12,6 +14,60 @@ import (
 type GameRepository struct {
 	Data *Data
 }
+
+// GetOne returns one started game.
+func (gr *GameRepository) GetOne(ctx context.Context, gameID uint) (game.Game, error) {
+	qPairs := `
+	SELECT pa.id
+	FROM
+		games g
+			INNER JOIN pairs pa
+					   ON pa.game_id = g.id
+	WHERE g.id = $1;
+	`
+	qUsers := `
+	SELECT u.username
+	FROM
+		pairs pa
+			INNER JOIN players pl
+				ON pl.pair_id = pa.id
+			INNER JOIN users u
+				ON u.id = pl.user_id
+	WHERE pa.id = $1;
+	`
+	var g game.Game
+	//PAIRS
+	rows,err := gr.Data.DB.QueryContext(ctx, qPairs, gameID)
+	if err != nil {
+		return game.Game{}, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var p pair.Pair
+		rows.Scan(&p.ID)
+
+		// USERS
+		rows,err := gr.Data.DB.QueryContext(ctx, qUsers, p.ID)
+		if err != nil {
+			return game.Game{}, nil
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var u user.User
+			rows.Scan(&u.Username)
+			p.Users = append(p.Users, u)
+		}
+
+		g.Pairs = append(g.Pairs, p)
+	}
+
+	return g, nil
+}
+
 
 // GetAll returns all public started games.
 func (gr *GameRepository) GetAll(ctx context.Context) ([]game.Game, error) {
@@ -131,7 +187,6 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 	g.PlayersCount = 1
 
 	// PAIRS
-	var pairID int
 	q = `
 	INSERT INTO pairs(game_id)
 		VALUES ($1)
@@ -144,15 +199,17 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 
 	defer stmt.Close()
 
+	//Create and join pair
 	row = stmt.QueryRowContext(ctx, g.ID)
+	//Create pair
+	_ = stmt.QueryRowContext(ctx, g.ID)
 
-	err = row.Scan(&pairID)
+	err = row.Scan(&g.MyPairID)
 	if err != nil {
 		return err
 	}
 
 	// PLAYERS
-	var playerID uint
 	q = `
 	INSERT INTO players(user_id, pair_id)
 		VALUES ($1, $2)
@@ -165,9 +222,9 @@ func (gr *GameRepository) Create(ctx context.Context, g *game.Game, userID uint)
 
 	defer stmt.Close()
 
-	row = stmt.QueryRowContext(ctx, userID, pairID)
+	row = stmt.QueryRowContext(ctx, userID, g.MyPairID)
 
-	err = row.Scan(&playerID)
+	err = row.Scan(&g.MyPlayerID)
 	if err != nil {
 		return err
 	}

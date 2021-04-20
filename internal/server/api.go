@@ -27,5 +27,13 @@ func NewApi() http.Handler {
 
 	r.Mount("/games", gr.Routes())
 
+	pr := &PlayerRouter {
+		Repository: &data.PlayerRepository{
+			Data: data.New(),
+		},
+	}
+
+	r.Mount("/players", pr.Routes())
+
 	return r
 }
