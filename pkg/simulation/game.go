@@ -23,6 +23,9 @@ const (
 	checkWinnerVueltas
 	// Has a winner
 	ended
+
+	TeamA = 1
+	TeamB = 2
 )
 
 // Game has 10 rounds
@@ -36,9 +39,12 @@ type Game struct {
 	pairCanSing     bool
 	pairCanSwapCard bool
 
-	currentPlayer   *state.Player
-	winnerLastRound *state.Player
-	topCard         *state.Card
+	currentPlayer       *state.Player
+	winnerLastRound     *state.Player
+	topCard             *state.Card
+	winnerLast10        int
+	winnerPair          int
+	winnerPairLastRound int
 }
 
 type GameState struct {
@@ -78,10 +84,12 @@ func NewGame(p []*state.Player) (g *Game) {
 		},
 	}
 	g.deck.Shuffle()
-	// Creates the first round
-	g.rounds[0] = NewRound(g.deck.GetTriumph())
+
 	// Set first player and deal initial cards
 	g.GameState.Players.SetRandomFirstPlayer()
+
+	// Creates the first round
+	g.rounds[0] = NewRound(g.GameState.Players.Current().Pair, g.deck.GetTriumph())
 	g.initialCardDealing()
 
 	first := g.GameState.Players.Current()
@@ -102,7 +110,7 @@ func (g *Game) initialCardDealing() {
 func (g *Game) newRound(firstPlayer *state.Player) {
 
 	g.currentRound++
-	g.rounds[g.currentRound] = NewRound(g.deck.GetTriumph())
+	g.rounds[g.currentRound] = NewRound(firstPlayer.Pair, g.deck.GetTriumph())
 	if g.currentRound > 6 {
 		g.GameState.Arrastre = true
 	}
@@ -127,6 +135,7 @@ func (g *Game) cardPlayed(c *state.Card) {
 func (g *Game) checkRoundWinner() {
 	_, winnerPos := g.rounds[g.currentRound].checkWinner()
 	g.winnerLastRound = g.GameState.Players.GetN(winnerPos)
+	g.winnerPairLastRound = g.rounds[g.currentRound].pWinner
 }
 
 // Process a new card played
@@ -148,12 +157,7 @@ func (g *Game) processCard(c *state.Card) {
 
 		// TODO actualizar ganador de ronda
 		g.checkRoundWinner()
-		points := g.rounds[g.currentRound].Points()
-		if g.winnerLastRound.Pair == 0 {
-			g.GameState.PointsTeamA += points
-		} else {
-			g.GameState.PointsTeamB += points
-		}
+		g.updatePoints()
 
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
@@ -168,6 +172,27 @@ func (g *Game) processCard(c *state.Card) {
 	// Esperar Cantes
 	// Cambiar 7
 	// Repartir cartas
+}
+
+func (g *Game) updatePoints() {
+
+	points := g.rounds[g.currentRound].Points()
+
+	if g.winnerLastRound.Pair == TeamA {
+		g.GameState.PointsTeamA += points
+		if g.currentRound == 9 {
+			g.GameState.PointsTeamA += 10
+			g.winnerLast10 = TeamA
+		}
+	} else {
+		g.GameState.PointsTeamB += points
+		// 10 últimas
+		if g.currentRound == 9 {
+			g.GameState.PointsTeamB += 10
+			g.winnerLast10 = TeamB
+
+		}
+	}
 }
 func (g *Game) checkWinnerVueltas() {
 
@@ -187,7 +212,9 @@ func (g *Game) singingState() {
 	if !g.pairCanSing {
 		g.GameState.currentState = swap7
 		g.swapCard()
+
 	} else {
+
 		g.checkWinnerIdas()
 	}
 
@@ -220,21 +247,55 @@ func (g *Game) swapCard() {
 			g.GameState.currentState = t1
 			g.newRound(g.winnerLastRound)
 		}
+	} else {
+
 	}
 }
 
 func (g *Game) checkWinnerIdas() {
 
 	// TODO comprobar ganador idas
-	winnerIdas := true
+
+	winnerIdas := g.checkWinner()
 	if winnerIdas {
 		g.GameState.currentState = ended
+
+		// Comprobar puntos de cada equipo
 		g.ended()
 	} else {
 		//
 		g.GameState.Vueltas = true
 		g.restart()
 	}
+}
+
+//
+func (g *Game) checkWinner() bool {
+	//SI una pareja no llega a 30 sin cantes, pierde
+	if g.GameState.PointsTeamA < 30 {
+		g.winnerPair = TeamB
+		return true
+	}
+	if g.GameState.PointsTeamB < 30 {
+		g.winnerPair = TeamA
+		return true
+	}
+	// Si ambas superan 100, gana la que lleve 10 ultimas
+	if g.GetTeamPoints(TeamA) > 100 && g.GetTeamPoints(TeamB) > 100 {
+		g.winnerPair = g.winnerLast10
+		return true
+	}
+
+	if g.GetTeamPoints(TeamA) > 100 {
+		g.winnerPair = TeamA
+		return true
+	}
+	if g.GetTeamPoints(TeamB) > 100 {
+		g.winnerPair = TeamB
+		return true
+	}
+
+	return false
 }
 
 // Handlers
@@ -257,6 +318,16 @@ func (g *Game) HandleChangedCard(changedCard bool) {
 // GetPlayersID returns the ids of all players
 func (g *Game) GetPlayersID() []uint32 {
 	return g.GameState.Players.GetPlayersIds()
+}
+
+// GetTeamPoints returns points for a team, even returns Team A, odd Team B
+func (g *Game) GetTeamPoints(team int) (points int) {
+	if team%2 == 0 {
+		points = g.GameState.PointsTeamA + g.GameState.PointsSingA
+	} else {
+		points = g.GameState.PointsTeamB + g.GameState.PointsSingB
+	}
+	return points
 }
 
 func (g *Game) ended() {

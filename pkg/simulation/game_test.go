@@ -86,10 +86,10 @@ func TestPlayRound(t *testing.T) {
 	g := NewGame(ps)
 
 	var cardsPlayed []*state.Card
-	r := NewRound(g.deck.GetTriumph())
+	r := NewRound(0, g.deck.GetTriumph())
 
 	for i := 0; i < 4; i++ {
-		c := g.currentPlayer.PickRandomCard()
+		c := g.currentPlayer.PickRandomCard(0)
 		g.HandleCardPlayed(c)
 		r.playedCard(c)
 		cardsPlayed = append(cardsPlayed, c)
@@ -108,6 +108,22 @@ func TestPlayRound(t *testing.T) {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
+
+	t.Run("winner team has points", func(t *testing.T) {
+		if g.winnerPairLastRound == 0 {
+			t.Errorf("not updated winner pair")
+		}
+		want := r.Points()
+		var got int
+		if g.winnerLastRound.Pair == TeamA {
+			got = g.GameState.PointsTeamA
+		} else {
+			got = g.GameState.PointsTeamB
+		}
+		if got != want {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
 }
 
 func TestPlayAllRounds(t *testing.T) {
@@ -115,18 +131,43 @@ func TestPlayAllRounds(t *testing.T) {
 	g := NewGame(ps)
 
 	var cardsPlayed []*state.Card
-	r := NewRound(g.deck.GetTriumph())
+	r := NewRound(0, g.deck.GetTriumph())
 
 	for rounds := 0; rounds < 10; rounds++ {
-		t.Log(rounds)
 		for i := 0; i < 4; i++ {
-			c := g.currentPlayer.PickRandomCard()
+			c := g.currentPlayer.PickCard(0)
 			g.HandleCardPlayed(c)
 			r.playedCard(c)
 			cardsPlayed = append(cardsPlayed, c)
 		}
 	}
+	t.Run("game state ended", func(t *testing.T) {
+		if g.winnerPair != 0 && g.GameState.currentState != ended {
+			t.Errorf("got %v, want %v", g.GameState.currentState, ended)
+		}
+		if g.winnerPair != 0 {
+			t.Logf("Winner team: %v", g.winnerPair)
+		}
+		t.Logf("Puntos A: %v Puntos B: %v Sum: %v",
+			g.GetTeamPoints(1), g.GetTeamPoints(2), g.GetTeamPoints(1)+g.GetTeamPoints(2))
+	})
 
+	t.Run("correct total points", func(t *testing.T) {
+		if sumPoints(g.rounds) != 120 {
+			t.Errorf("got %v, want %v", sumPoints(g.rounds), 120)
+		}
+	})
+
+	t.Run("needs rematch", func(t *testing.T) {
+		if g.GetTeamPoints(TeamA) < 100 && g.GetTeamPoints(TeamB) < 100 {
+			t.Logf("needs rematch")
+			if !g.GameState.Vueltas {
+				t.Errorf("rematch want %v, got %v", true, g.GameState.Vueltas)
+			}
+		} else {
+			t.Logf("doesn't need rematch")
+		}
+	})
 }
 
 func TestInitialCardDealing(t *testing.T) {
@@ -180,5 +221,12 @@ func CreateTestPlayer() *state.Player {
 		PAIR++
 	}()
 
-	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2)
+	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2+1)
+}
+
+func sumPoints(rs [10]*round) (sum int) {
+	for _, r := range rs {
+		sum += r.points
+	}
+	return sum
 }

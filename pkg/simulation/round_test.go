@@ -6,7 +6,7 @@ import (
 )
 
 func TestRoundPlayed(t *testing.T) {
-	r := NewRound(state.SUIT1)
+	r := NewRound(0, state.SUIT1)
 
 	cards := []*state.Card{
 		state.CreateCard(state.SUIT4, 5),
@@ -79,7 +79,7 @@ func TestRoundPlayed(t *testing.T) {
 	})
 }
 func TestRoundPlayedWithTriumph(t *testing.T) {
-	r := NewRound(state.SUIT1)
+	r := NewRound(0, state.SUIT1)
 	cards := []*state.Card{
 		state.CreateCard(state.SUIT4, 5),
 		state.CreateCard(state.SUIT4, 1),

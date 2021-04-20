@@ -55,7 +55,7 @@ func (d *Deck) GetTriumph() string {
 	return d.triumph
 }
 
-// Deals the next card of the deck
+// PickCard Deals the next card of the deck
 func (d *Deck) PickCard() (c *Card) {
 	c = d.cards[d.top]
 	if d.top < 39 {

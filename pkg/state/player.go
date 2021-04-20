@@ -2,7 +2,6 @@ package state
 
 import (
 	"math/rand"
-	"time"
 )
 
 type Player struct {
@@ -95,10 +94,15 @@ func (p *Player) GetSeven(triumph string) *Card {
 }
 
 // PickRandomCard returns a random card from the player's hand
-func (p *Player) PickRandomCard() (c *Card) {
-	rand.Seed(time.Now().UnixNano())
+func (p *Player) PickRandomCard(seed int64) (c *Card) {
+	rand.Seed(seed)
 
 	return p.Cards[rand.Intn(p.cardCount-1)]
+}
+
+// PickCard returns a card from the player's hand
+func (p *Player) PickCard(card int) (c *Card) {
+	return p.Cards[card]
 }
 
 func (p *Player) SetPlay(canPlay bool) {
