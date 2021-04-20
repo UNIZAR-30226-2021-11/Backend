@@ -14,7 +14,6 @@ type SimulationRouter struct {
 
 	clients          		map[uint32]*Client
 	EventsDispatcher 		*events.EventDispatcher
-	IdManager        		*data.IdManager
 	userNameRegistry 		*data.UserNamesRegistry
 	upgrader         		*websocket.Upgrader
 	simulationRepository	*data.SimulationRepository
@@ -24,12 +23,10 @@ type SimulationRouter struct {
 func NewSimulationRouter() *SimulationRouter {
 	eventDispatcher := events.NewEventDispatcher()
 	userNameRegistry := data.NewUserNamesRegistry()
-	idManager := data.NewIdManager()
 
 	sr := &SimulationRouter{
 		clients:          make(map[uint32]*Client),
 		EventsDispatcher: eventDispatcher,
-		IdManager:        idManager,
 		userNameRegistry: userNameRegistry,
 		upgrader: &websocket.Upgrader{
 			ReadBufferSize:  1024,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
+	"strconv"
 )
 
 const channelBufSize = 100
@@ -27,7 +28,10 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 	ch := make(chan *[]byte, channelBufSize)
 	doneCh := make(chan bool)
 
-	return &Client{sr.IdManager.NextPlayerId(), ws, ch, doneCh, sr}
+	_, data, _ := ws.ReadMessage()
+	clientId, _ := strconv.Atoi(string(data))
+
+	return &Client{uint32(clientId), ws, ch, doneCh, sr}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -117,7 +121,7 @@ func (c *Client) readFromWebSocket() {
 		c.doneCh <- true
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
 	} else if messageType != websocket.TextMessage {
-		log.Println("Non binary message received, ignoring")
+		log.Println("Non text message received, ignoring")
 	} else {
 		c.unmarshalUserInput(data)
 	}
