@@ -4,9 +4,9 @@ package state
 // Val allowed [1-7] [10-12]
 type Card struct {
 	Suit     string `json:"suit"`
-	Val      int `json:"val"`
-	Points   int `json:"points"`
-	Playable bool `json:"playable"`
+	Val      int    `json:"val"`
+	Points   int    `json:"points"`
+	Playable bool   `json:"playable"`
 }
 
 // Creates a new card with the correct Points and value
@@ -59,14 +59,13 @@ func (c *Card) IsSingingPair(c2 *Card) bool {
 	}
 }
 
-
 // Returns the Points that this Card gives
 func (c *Card) value() int {
 	return c.Points
 }
 
-// Checks if 2 cards are equal
-func (c *Card) equals(c2 *Card) bool {
+// Equals Checks if 2 cards are equal
+func (c *Card) Equals(c2 *Card) bool {
 	return c.Suit == c2.Suit && c.Val == c2.Val
 }
 

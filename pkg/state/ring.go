@@ -29,10 +29,11 @@ func NewPlayerRing(players []*Player) *Ring {
 			}
 			r = Ring{
 				ringNode: &first,
-				All:      players,
 			}
+			r.All = append(r.All, player)
 			continue
 		}
+		r.All = append(r.All, player)
 		rn := ringNode{
 			p:    player,
 			next: nil,
@@ -43,7 +44,7 @@ func NewPlayerRing(players []*Player) *Ring {
 			r.next = &first
 		}
 	}
-	r.Next()
+	r.ringNode = r.next
 	return &r
 }
 
@@ -54,25 +55,30 @@ func (r *Ring) SetFirstPlayer(p *Player) {
 	for !r.ringNode.p.sameId(p.Id) {
 		r.ringNode = r.next
 	}
+	r.p.SetPlay(true)
 }
 
-// Sets a random first Player
+// SetRandomFirstPlayer Sets a random first Player
 func (r *Ring) SetRandomFirstPlayer() {
 
 	rand.Seed(time.Now().UnixNano())
 	for i := rand.Intn(4); i != 0; i-- {
 		r.ringNode = r.next
 	}
+	r.ringNode.p.SetPlay(true)
+
 }
 
-// Returns the current Player and advances the head to the next
+// Next Returns the current Player and advances the head to the next
 func (r *Ring) Next() (p *Player) {
 	p = r.p
+	p.SetPlay(false)
 	r.ringNode = r.next
+	r.ringNode.p.SetPlay(true)
 	return p
 }
 
-// Gets the Player n positions ahead of the current Player
+// GetN Gets the Player n positions ahead of the current Player
 func (r *Ring) GetN(n int) (p *Player) {
 
 	n = n % 4
@@ -87,9 +93,39 @@ func (r *Ring) GetN(n int) (p *Player) {
 }
 
 // DealCards deals a card to each Player
-func (r *Ring) DealCards(cards []*Card) {
+func (r *Ring) DealCards(cards [4]*Card) {
 
 	for i := 0; i < 4; i++ {
-		r.p.dealCard(cards[i])
+		r.GetN(i).dealCard(cards[i])
 	}
+}
+
+func (r *Ring) InitialCardDealing(cards [4][6]*Card) {
+	for i := 0; i < 4; i++ {
+		p := r.GetN(i)
+		p.DealCards(cards[i])
+	}
+}
+
+func (r *Ring) Find(id uint32) (p *Player) {
+	current := r.ringNode
+
+	for i := 0; i < 4; i++ {
+		if current.p.Id == id {
+			return current.p
+		}
+		current = current.next
+	}
+	return nil
+}
+
+func (r *Ring) GetPlayersIds() (ids []uint32) {
+	for i := 0; i < 4; i++ {
+		ids = append(ids, r.GetN(i).Id)
+	}
+	return ids
+}
+
+func (r *Ring) Current() *Player {
+	return r.p
 }

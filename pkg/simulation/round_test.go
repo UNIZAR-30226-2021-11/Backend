@@ -17,7 +17,8 @@ func TestRoundPlayed(t *testing.T) {
 	winnerCard := cards[1]
 	t.Run("no_winner_at_start", func(t *testing.T) {
 
-		if r.checkWinner() {
+		winner, _ := r.checkWinner()
+		if winner {
 			t.Error("got a winner, shouldn't be")
 		}
 	})
@@ -41,8 +42,8 @@ func TestRoundPlayed(t *testing.T) {
 	})
 
 	t.Run("winner_at_end", func(t *testing.T) {
-
-		if !r.checkWinner() {
+		winner, _ := r.checkWinner()
+		if !winner {
 			t.Error("didn't get a winner, should be")
 		}
 	})
@@ -88,7 +89,8 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 	winnerCard := cards[3]
 	t.Run("no_winner_at_start", func(t *testing.T) {
 
-		if r.checkWinner() {
+		winner, _ := r.checkWinner()
+		if winner {
 			t.Error("got a winner, shouldn't be")
 		}
 	})
@@ -113,7 +115,8 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 
 	t.Run("winner_at_end", func(t *testing.T) {
 
-		if !r.checkWinner() {
+		winner, _ := r.checkWinner()
+		if !winner {
 			t.Error("didn't get a winner, should be")
 		}
 	})

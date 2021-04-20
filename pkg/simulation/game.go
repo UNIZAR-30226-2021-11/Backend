@@ -19,30 +19,26 @@ const (
 	swap7
 
 	// Check if there is a winner
-	checkWinner
+	checkWinnerIdas
 	checkWinnerVueltas
 	// Has a winner
-	winner
+	ended
 )
 
 // Game has 10 rounds
 type Game struct {
-	players      *state.Ring
-	rounds       [10]*round
-	triumph      string
+	rounds [10]*round
+	//triumph      string
 	currentRound int
 	GameState    GameState `json:"game_state"`
+	deck         *state.Deck
 
-	team1Points int
-	team2Points int
-	deck        *state.Deck
-	cardsPlayed int
-	// notifies the winner
-	hasWinner chan<- struct{}
+	pairCanSing     bool
+	pairCanSwapCard bool
 
-	// Input
-	stop    <-chan struct{}
-	newCard <-chan Event
+	currentPlayer   *state.Player
+	winnerLastRound *state.Player
+	topCard         *state.Card
 }
 
 type GameState struct {
@@ -51,39 +47,86 @@ type GameState struct {
 	PointsSingA int `json:"points_sing_a"`
 	PointsSingB int `json:"points_sing_b"`
 
-	currentState int
-	CurrentRound int `json:"current_round"`
-
-	Vueltas bool `json:"vueltas"`
+	currentState  int
+	CurrentRound  int    `json:"current_round"`
+	CurrentPlayer uint32 `json:"current_player"`
+	Vueltas       bool   `json:"vueltas"`
 
 	Players *state.Ring `json:"players"`
+
+	TriumphCard *state.Card `json:"triumph_card"`
+
+	Arrastre bool `json:"arrastre"`
 }
 
-// Mejor un constructor, y una vez tenga el objeto llamo a startGame() p.e.
-// El triunfo mejor genéralo aleatoriamente aquí, no tiene sentido pasarlo desde
-//   el evento de creación de partida
-func NewGame(chan *state.Player) *Game {
-	return &Game{
-		//TODO
+// NewGame returns a game in its initial state, with the deck shuffled
+// and its first played picked
+func NewGame(p []*state.Player) (g *Game) {
+	r := state.NewPlayerRing(p)
+	g = &Game{
+		currentRound: 0,
+		deck:         state.NewDeck(),
+		GameState: GameState{
+			PointsTeamA:  0,
+			PointsTeamB:  0,
+			PointsSingA:  0,
+			PointsSingB:  0,
+			currentState: 0,
+			CurrentRound: 0,
+			Vueltas:      false,
+			Players:      r,
+		},
 	}
+	g.deck.Shuffle()
+	// Creates the first round
+	g.rounds[0] = NewRound(g.deck.GetTriumph())
+	// Set first player and deal initial cards
+	g.GameState.Players.SetRandomFirstPlayer()
+	g.initialCardDealing()
 
+	first := g.GameState.Players.Current()
+	g.GameState.CurrentPlayer = first.Id
+	g.currentPlayer = first
+	g.GameState.currentState = t1
+	return g
+}
+
+// initial card dealing, 6 cards to each player
+func (g *Game) initialCardDealing() {
+
+	cards := g.deck.InitialPick()
+	g.GameState.Players.InitialCardDealing(cards)
 }
 
 //Starts a new round
 func (g *Game) newRound(firstPlayer *state.Player) {
 
 	g.currentRound++
-	g.rounds[g.currentRound] = NewRound(g.triumph)
-	g.players.SetFirstPlayer(firstPlayer)
+	g.rounds[g.currentRound] = NewRound(g.deck.GetTriumph())
+	if g.currentRound > 6 {
+		g.GameState.Arrastre = true
+	}
+
+	if !g.GameState.Arrastre {
+		g.dealCards()
+	}
+	g.GameState.Players.SetFirstPlayer(firstPlayer)
 
 }
+
+// Process a card played, advances the player
 func (g *Game) cardPlayed(c *state.Card) {
 	g.rounds[g.currentRound].playedCard(c)
+	g.GameState.Players.Current().PlayCard(c)
+	g.GameState.Players.Next()
+	g.currentPlayer = g.GameState.Players.Current()
 
 }
 
-func (g *Game) roundHasWinner() bool {
-	return g.rounds[g.currentRound].checkWinner()
+// Checks for the round winner
+func (g *Game) checkRoundWinner() {
+	_, winnerPos := g.rounds[g.currentRound].checkWinner()
+	g.winnerLastRound = g.GameState.Players.GetN(winnerPos)
 }
 
 // Process a new card played
@@ -99,10 +142,18 @@ func (g *Game) processCard(c *state.Card) {
 		g.GameState.currentState = t3
 	case t3:
 		g.cardPlayed(c)
-
 		g.GameState.currentState = t4
 	case t4:
 		g.cardPlayed(c)
+
+		// TODO actualizar ganador de ronda
+		g.checkRoundWinner()
+		points := g.rounds[g.currentRound].Points()
+		if g.winnerLastRound.Pair == 0 {
+			g.GameState.PointsTeamA += points
+		} else {
+			g.GameState.PointsTeamB += points
+		}
 
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
@@ -120,75 +171,105 @@ func (g *Game) processCard(c *state.Card) {
 }
 func (g *Game) checkWinnerVueltas() {
 
+	// TODO comprobar si se ha ganado
+	winner := false
+	//
+	if !winner {
+		g.GameState.currentState = singing
+		g.singingState()
+	} else {
+		g.GameState.currentState = ended
+		g.ended()
+	}
 }
 func (g *Game) singingState() {
 
-}
-func (g *Game) processSing(playerId int, suit string) {
-
-}
-
-func (g *Game) changeCard(playerId int) {
-
-}
-
-// StartGame starts a new Game with 10 rounds
-func InitGame(p []*state.Player, triumph string) (g *Game) {
-
-	g = &Game{
-		players:      state.NewPlayerRing(p),
-		triumph:      triumph,
-		currentRound: 0,
-		deck:         state.NewDeck(),
+	if !g.pairCanSing {
+		g.GameState.currentState = swap7
+		g.swapCard()
+	} else {
+		g.checkWinnerIdas()
 	}
-	g.deck.Shuffle()
 
-	// Creates the first round
-	g.rounds[0] = NewRound(triumph)
-	// Set first player
-	g.players.SetRandomFirstPlayer()
-	return g
+}
+func (g *Game) processSing(suit string) {
+	g.GameState.currentState = singing
+	//if g.GameState.
 }
 
-func (g *Game) Start() {
+func (g *Game) changeCard(hasChanged bool) {
 
-	for c := range g.newCard {
-		switch ev := c.(type) {
-		case CardPlayedEvent:
-			g.processCard(state.CreateCard(ev.suit, ev.val))
+	if hasChanged {
+		seven := g.currentPlayer.GetSeven(g.GameState.TriumphCard.Suit)
+		g.deck.ChangeCard(seven)
+		g.currentPlayer.ChangeCard(g.topCard)
 
-		case SingEvent:
-			g.processSing(ev.playerId, ev.singSuit)
+	}
 
-		case CardChangeEvent:
-			g.changeCard(ev.playerId)
+}
+
+func (g *Game) swapCard() {
+
+	// TODO comprobar si la pareja ganadora puede cambiar
+	if !g.pairCanSwapCard {
+		if g.currentRound == 9 {
+
+			g.GameState.currentState = checkWinnerIdas
+			g.checkWinnerIdas()
+		} else {
+			g.GameState.currentState = t1
+			g.newRound(g.winnerLastRound)
 		}
+	}
+}
 
-		// Process new state
-		// Repartir cartas
-		// Actualizar cantes
-		// Actualizar cambiar el 7
+func (g *Game) checkWinnerIdas() {
+
+	// TODO comprobar ganador idas
+	winnerIdas := true
+	if winnerIdas {
+		g.GameState.currentState = ended
+		g.ended()
+	} else {
+		//
+		g.GameState.Vueltas = true
+		g.restart()
 	}
 }
 
 // Handlers
 
-func (g *Game) HandleCardPlayed() {
+func (g *Game) HandleCardPlayed(card *state.Card) {
+	g.processCard(card)
+}
+
+func (g *Game) HandleSing(suit string, hasSinged bool) {
+	if hasSinged {
+		g.processSing(suit)
+	}
+}
+
+func (g *Game) HandleChangedCard(changedCard bool) {
+	g.changeCard(changedCard)
 
 }
 
-func (g *Game) HandleSing() {
+// GetPlayersID returns the ids of all players
+func (g *Game) GetPlayersID() []uint32 {
+	return g.GameState.Players.GetPlayersIds()
+}
+
+func (g *Game) ended() {
 
 }
 
-func (g *Game) HandleNoSing() {
+// restart puts the game in the initial state, saves the current point
+func (g *Game) restart() {
 
 }
 
-func (g *Game) HandleChangedCard() {
-
-}
-
-func (g *Game) GetState() {
-
+// Deals a card to each player
+func (g *Game) dealCards() {
+	cards := g.deck.Pick4Cards()
+	g.GameState.Players.DealCards(cards)
 }

@@ -32,23 +32,26 @@ func (r *round) playedCard(c *state.Card) {
 }
 
 // Returns true if there is a winner
-func (r *round) checkWinner() bool {
+func (r *round) checkWinner() (bool, int) {
 
 	if r.pos < 3 {
-		return false
+		return false, 0
 	}
 	winnerCard := r.cardsPlayed[0]
-	for _, c := range r.cardsPlayed {
+	winnerPos := 0
+	for i, c := range r.cardsPlayed {
 
 		// If they same suits and not wins
 		if winnerCard.SameSuit(c) && !winnerCard.Wins(c) {
 			winnerCard = c
+			winnerPos = i
 		} else if c.IsTriumph(r.triumph) && !winnerCard.SameSuit(c) {
 			winnerCard = c
+			winnerPos = i
 		}
 	}
 	r.winner = winnerCard
-	return true
+	return true, winnerPos
 }
 
 func (r *round) Points() int {

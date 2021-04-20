@@ -38,7 +38,7 @@ func TestDeck_Shuffle(t *testing.T) {
 				Points: getPoints(c),
 				Val:    c,
 			}
-			if !carta.equals(d.cards[i]) {
+			if !carta.Equals(d.cards[i]) {
 				diff++
 			}
 			i++
@@ -58,7 +58,7 @@ func TestDealAllCards(t *testing.T) {
 	i := 0
 	for _, suit := range suits {
 		for _, c := range cards {
-			if !CreateCard(suit, c).equals(d.DealCard()) {
+			if !CreateCard(suit, c).Equals(d.PickCard()) {
 
 				t.Error("not the same card")
 			}
@@ -66,4 +66,17 @@ func TestDealAllCards(t *testing.T) {
 
 		}
 	}
+	t.Run("deal 40 cards", func(t *testing.T) {
+
+		if i != 40 {
+			t.Errorf("got %v, want %v", i, 40)
+		}
+	})
+
+	t.Run("top updates correctly", func(t *testing.T) {
+
+		if d.top != 39 {
+			t.Errorf("got %v, want %v", d.top, 39)
+		}
+	})
 }

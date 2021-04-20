@@ -8,21 +8,21 @@ import (
 )
 
 type SimulationRepository struct {
-	eventDispatcher	*events.EventDispatcher
-	futureGames		map[uint32]chan *state.Player
-	games			map[uint32]*simulation.Game
+	eventDispatcher *events.EventDispatcher
+	futureGames     map[uint32]chan *state.Player
+	games           map[uint32]*simulation.Game
 }
 
 func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *SimulationRepository {
 	return &SimulationRepository{
 		eventDispatcher: eventDispatcher,
-		futureGames:	make(map[uint32]chan *state.Player),
-		games: 			make(map[uint32]*simulation.Game),
+		futureGames:     make(map[uint32]chan *state.Player),
+		games:           make(map[uint32]*simulation.Game),
 	}
 }
 
 func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCreate) {
-	log.Printf("User %d trying to create game %d\n",gameCreateEvent.ClientID, gameCreateEvent.GameID)
+	log.Printf("User %d trying to create game %d\n", gameCreateEvent.ClientID, gameCreateEvent.GameID)
 
 	gameId := gameCreateEvent.GameID
 	sr.futureGames[gameId] = make(chan *state.Player, 4)
@@ -31,21 +31,26 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
-		ID:		int(userJoinedEvent.ClientID),
+		Id: userJoinedEvent.ClientID,
 	}
 
 	sr.futureGames[gameId] <- player
 	players := sr.futureGames[gameId]
 
 	if len(players) == 4 {
-		game := simulation.NewGame(players)
+		var ps []*state.Player
+		for i := 0; i < 4; i++ {
+			ps = append(ps, <-players)
+		}
+		game := simulation.NewGame(ps)
 		//game.InitGame()
 		sr.games[gameId] = game
 		event := &events.StateChanged{
-			ClientsID: 	[]uint32{1},
-			Game:   	"esto es el estado del juego",
+			ClientsID: []uint32{1},
+			Game:      game.GameState,
 		}
 		sr.eventDispatcher.FireStateChanged(event)
+		delete(sr.futureGames, gameId)
 	}
 }
 
@@ -57,10 +62,10 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 	gameId := cardPlayedEvent.GameID
 	game := sr.games[gameId]
 
-	game.HandleCardPlayed(cardPlayedEvent.ClientID, cardPlayedEvent.Card)
+	game.HandleCardPlayed(cardPlayedEvent.Card)
 	event := &events.StateChanged{
-		ClientsID: 	game.GetPlayersID(),
-		Game:   	game,
+		ClientsID: game.GetPlayersID(),
+		Game:      game,
 	}
 	sr.eventDispatcher.FireStateChanged(event)
 }
@@ -72,4 +77,3 @@ func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardC
 func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 	//TODO
 }
-
