@@ -1,12 +1,12 @@
 package state
 
 // Card represents a guiñote Card
-// val allowed [1-7] [10-12]
+// Val allowed [1-7] [10-12]
 type Card struct {
-	Suit        string
-	val         int
-	Points      int
-	canBePlayed bool
+	Suit     string `json:"suit"`
+	Val      int    `json:"val"`
+	Points   int    `json:"points"`
+	Playable bool   `json:"playable"`
 }
 
 // Creates a new card with the correct Points and value
@@ -14,19 +14,19 @@ func CreateCard(suit string, val int) *Card {
 
 	return &Card{
 		Suit:   suit,
-		val:    val,
+		Val:    val,
 		Points: getPoints(val),
 	}
 }
 
 // Changes the playability of the card
 func (c *Card) AllowPlay(canBePlayed bool) {
-	c.canBePlayed = canBePlayed
+	c.Playable = canBePlayed
 }
 
 // Checks wether this card can be played or not
 func (c *Card) CanBePlayed() bool {
-	return c.canBePlayed
+	return c.Playable
 }
 
 // Checks if the value of c2 is less than that of c
@@ -34,7 +34,7 @@ func (c *Card) CanBePlayed() bool {
 func (c *Card) Wins(c2 *Card) bool {
 	// If the have no value, check with order
 	if c.Points == 0 && c2.Points == 0 {
-		return c.val > c2.val
+		return c.Val > c2.Val
 	}
 	return c.Points > c2.Points
 }
@@ -49,14 +49,24 @@ func (c *Card) SameSuit(c2 *Card) bool {
 	return c.Suit == c2.Suit
 }
 
+// Checks if th
+func (c *Card) IsSingingPair(c2 *Card) bool {
+	if c.SameSuit(c2) {
+		return (c.Val == 10 || c.Val == 12) && (c2.Val == 10 || c2.Val == 12)
+
+	} else {
+		return false
+	}
+}
+
 // Returns the Points that this Card gives
 func (c *Card) value() int {
 	return c.Points
 }
 
-// Checks if 2 cards are equal
-func (c *Card) equals(c2 *Card) bool {
-	return c.Suit == c2.Suit && c.val == c2.val
+// Equals Checks if 2 cards are equal
+func (c *Card) Equals(c2 *Card) bool {
+	return c.Suit == c2.Suit && c.Val == c2.Val
 }
 
 // Returns the Points that this Card gives

@@ -28,8 +28,6 @@ var supportedEvents = []EventType{
 	NewEventType("CardPlayed", 2),
 	NewEventType("CardChanged", 2),
 	NewEventType("Sing", 2),
-	//NewEventType("UserInput", 3),
-	//NewEventType("ScoreSent", 3),
 }
 
 // END CONFIGURATION
