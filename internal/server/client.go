@@ -28,6 +28,7 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 
 	player := struct {
 		Id uint32			`json:"player_id,omitempty"`
+		PairId uint32	    `json:"pair_id,omitempty"`
 	}{}
 	err := ws.ReadJSON(&player)
 	if err != nil {
@@ -135,6 +136,7 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 	case events.GAME_CREATE:
 		e := &events.GameCreate{
 			PlayerID: event.PlayerID,
+			PairID: event.PairID,
 			GameID:   event.GameID,
 		}
 		c.sr.EventsDispatcher.FireGameCreate(e)
@@ -142,8 +144,9 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 	case events.USER_JOINED:
 		e := &events.UserJoined{
 			PlayerID: event.PlayerID,
+			PairID:	event.PairID,
 			GameID:   event.GameID,
-			UserName: "usuario-prueba",
+			UserName: event.UserName,
 		}
 		c.sr.EventsDispatcher.FireUserJoined(e)
 

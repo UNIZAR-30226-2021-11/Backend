@@ -19,7 +19,7 @@ func main() {
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
-		c := Client{Id: uint32(40+i)}
+		c := Client{Id: uint32(40+i), PairId: uint32((i%2)+20)}
 		c.Start()
 		clients = append(clients, c)
 	}
@@ -41,6 +41,7 @@ func main() {
 type Client struct {
 	*websocket.Conn
 	Id uint32			`json:"player_id,omitempty"`
+	PairId uint32	    `json:"pair_id,omitempty"`
 }
 
 func (c *Client) Start() {
@@ -62,9 +63,8 @@ func (c *Client) Start() {
 			if err != nil {
 				log.Print("Error reading JSON")
 			}
-			log.Printf("Client %v:Message received: %v", c.Id, state)
 			bytes, err := json.Marshal(&state)
-			log.Printf("%s", bytes)
+			log.Printf("Client %v:Message received: %s", c.Id, bytes)
 		}
 	}()
 }
@@ -73,6 +73,7 @@ func (c *Client) JoinGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
+		PairID:	   c.PairId,
 		EventType: 1,
 	}
 	_ = c.WriteJSON(event)
@@ -82,6 +83,7 @@ func (c *Client) CreateGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
+		PairID:	   c.PairId,
 		EventType: 0,
 	}
 	_ = c.WriteJSON(event)

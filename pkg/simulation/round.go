@@ -3,8 +3,8 @@ package simulation
 import "Backend/pkg/state"
 
 type round struct {
-	pWinner     int
-	sp          int
+	pWinner     uint32
+	sp          uint32
 	winner      *state.Card
 	suit        string
 	triumph     string
@@ -15,7 +15,7 @@ type round struct {
 }
 
 // NewRound creates new round, receives
-func NewRound(startingPair int, triumph string) *round {
+func NewRound(startingPair uint32, triumph string) *round {
 	return &round{
 		triumph: triumph,
 		sp:      startingPair,
@@ -49,11 +49,11 @@ func (r *round) checkWinner() (bool, int) {
 		if winnerCard.SameSuit(c) && !winnerCard.Wins(c) {
 			winnerCard = c
 			winnerPos = i
-			r.updatePair(i)
+			r.updatePair(uint32(i))
 		} else if c.IsTriumph(r.triumph) && !winnerCard.SameSuit(c) {
 			winnerCard = c
 			winnerPos = i
-			r.updatePair(i)
+			r.updatePair(uint32(i))
 		}
 	}
 	r.winner = winnerCard
@@ -61,7 +61,7 @@ func (r *round) checkWinner() (bool, int) {
 }
 
 // Updates the winner pair
-func (r *round) updatePair(id int) {
+func (r *round) updatePair(id uint32) {
 	if id%2 == 0 {
 		r.pWinner = r.sp
 	} else {
