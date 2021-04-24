@@ -39,6 +39,8 @@ func NewSimulationRouter() *SimulationRouter {
 	eventDispatcher.RegisterStateChangedListener(sr)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
+	eventDispatcher.RegisterUserLeftListener(sr.simulationRepository)
+	eventDispatcher.RegisterUserLeftListener(sr)
 	eventDispatcher.RegisterCardPlayedListener(sr.simulationRepository)
 	eventDispatcher.RegisterCardChangedListener(sr.simulationRepository)
 	eventDispatcher.RegisterSingListener(sr.simulationRepository)
@@ -57,8 +59,6 @@ func (sr *SimulationRouter) Handler (w http.ResponseWriter, r *http.Request) {
 
 	client := NewClient(conn, sr)
 	sr.clients[client.ID] = client
-
-	//sr.EventsDispatcher.FireUserConnected(&events.UserConnected{PlayerID: client.ID})
 
 	log.Println("Added new client. Now", len(sr.clients), "clients connected.")
 	client.Listen()
@@ -79,5 +79,19 @@ func (sr *SimulationRouter) HandleStateChanged (stateChangedEvent *events.StateC
 	for _, c := range clientsID {
 		sr.SendToClient(c, &stateChangedEvent.Game)
 	}
+
+}
+
+func (sr *SimulationRouter) HandleUserLeft (userLeftEvent *events.UserLeft) {
+	clientID := userLeftEvent.PlayerID
+	client, ok := sr.clients[clientID]
+	if ok {
+		client.Done()
+		delete(sr.clients, clientID)
+	} else {
+		log.Printf("Client %d not found\n", clientID)
+		return
+	}
+
 
 }

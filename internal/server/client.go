@@ -124,7 +124,7 @@ func (c *Client) readFromWebSocket() {
 		log.Println(err)
 
 		c.doneCh <- true
-		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{PlayerID: c.ID})
 	} else {
 		c.unmarshalUserInput(event)
 	}
@@ -149,6 +149,38 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 			UserName: event.UserName,
 		}
 		c.sr.EventsDispatcher.FireUserJoined(e)
+
+	case events.USER_LEFT:
+		e := &events.UserLeft{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+		}
+		c.sr.EventsDispatcher.FireUserLeft(e)
+
+	case events.CARD_PLAYED:
+		e := &events.CardPlayed{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Card:     event.Card,
+		}
+		c.sr.EventsDispatcher.FireCardPlayed(e)
+
+	case events.CARD_CHANGED:
+		e := &events.CardChanged{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Changed:  event.Changed,
+		}
+		c.sr.EventsDispatcher.FireCardChanged(e)
+
+	case events.SING:
+		e := &events.Sing{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Suit:  event.Suit,
+			HasSinged: event.HasSinged,
+		}
+		c.sr.EventsDispatcher.FireSing(e)
 
 	default:
 		log.Fatalln("Unknown message type %T", event.EventType)

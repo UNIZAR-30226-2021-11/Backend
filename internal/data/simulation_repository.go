@@ -76,26 +76,39 @@ func (sr *SimulationRepository) startNewGame(playersChan chan *state.Player, gam
 	delete(sr.futureGames, gameId)
 }
 
-func (sr *SimulationRepository) HandleUserLeft(userLeftEvent events.UserLeft) {
-	//TODO
+func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
+	//TODO: cambiar usuario por IA
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
-	gameId := cardPlayedEvent.GameID
-	game := sr.games[gameId]
-
+	game := sr.games[cardPlayedEvent.GameID]
 	game.HandleCardPlayed(cardPlayedEvent.Card)
+
 	event := &events.StateChanged{
 		ClientsID: game.GetPlayersID(),
-		Game:      game,
+		Game:      game.GameState,
 	}
 	sr.eventDispatcher.FireStateChanged(event)
 }
 
 func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardChanged) {
-	//TODO
+	game := sr.games[cardChangedEvent.GameID]
+	game.HandleChangedCard(cardChangedEvent.Changed)
+
+	event := &events.StateChanged{
+		ClientsID: game.GetPlayersID(),
+		Game:      game.GameState,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
 }
 
 func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
-	//TODO
+	game := sr.games[singEvent.GameID]
+	game.HandleSing(singEvent.Suit, singEvent.HasSinged)
+
+	event := &events.StateChanged{
+		ClientsID: game.GetPlayersID(),
+		Game:      game.GameState,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
 }
