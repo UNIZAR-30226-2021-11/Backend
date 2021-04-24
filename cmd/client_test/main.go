@@ -2,40 +2,51 @@ package main
 
 import (
 	"Backend/pkg/events"
+	"Backend/pkg/simulation"
 	"Backend/pkg/state"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/url"
-	"time"
+)
+
+const (
+	NUM_CLIENT = 4
 )
 
 func main() {
 
 	var clients []Client
 
-	for i := 0; i < 4; i++ {
-		c := Client{id: uint32(i)}
+	for i := 0; i < NUM_CLIENT; i++ {
+		c := Client{Id: uint32(40+i)}
 		c.Start()
 		clients = append(clients, c)
 	}
 
 	clients[0].CreateGame(1)
 
-	for i := 1; i < 4; i++ {
+	for i := 1; i < NUM_CLIENT; i++ {
 		clients[i].JoinGame(1)
 	}
 
-	time.Sleep(time.Second * 10)
-	clients[0].PlayCard()
+	for {
+
+	}
+
+	//time.Sleep(time.Second * 10)
+	//clients[0].PlayCard()
 }
 
 type Client struct {
 	*websocket.Conn
-	id uint32
+	Id uint32			`json:"player_id,omitempty"`
 }
 
 func (c *Client) Start() {
 	c.Conn = newWsConn()
+
+	c.WriteJSON(&c)
 
 	// Receive messages
 	go func() {
@@ -46,8 +57,14 @@ func (c *Client) Start() {
 			}
 		}()
 		for {
-			_, message, _ := c.ReadMessage()
-			log.Printf("Client %v:Message received: %s", c.id, message)
+			var state simulation.GameState
+			err := c.ReadJSON(&state)
+			if err != nil {
+				log.Print("Error reading JSON")
+			}
+			log.Printf("Client %v:Message received: %v", c.Id, state)
+			bytes, err := json.Marshal(&state)
+			log.Printf("%s", bytes)
 		}
 	}()
 }
@@ -55,7 +72,7 @@ func (c *Client) Start() {
 func (c *Client) JoinGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
-		PlayerID:  c.id,
+		PlayerID:  c.Id,
 		EventType: 1,
 	}
 	_ = c.WriteJSON(event)
@@ -64,7 +81,7 @@ func (c *Client) JoinGame(game uint32) {
 func (c *Client) CreateGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
-		PlayerID:  c.id,
+		PlayerID:  c.Id,
 		EventType: 0,
 	}
 	_ = c.WriteJSON(event)
@@ -73,7 +90,7 @@ func (c *Client) CreateGame(game uint32) {
 func (c *Client) PlayCard() {
 	event := events.Event{
 		GameID:    1,
-		PlayerID:  c.id,
+		PlayerID:  c.Id,
 		EventType: 3,
 		Card:      state.CreateCard(state.SUIT1, 1),
 	}
@@ -85,5 +102,6 @@ func newWsConn() *websocket.Conn {
 
 	// Establish connection
 	c, _, _ := websocket.DefaultDialer.Dial(u.String(), nil)
+
 	return c
 }

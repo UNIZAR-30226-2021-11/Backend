@@ -2,19 +2,17 @@ package server
 
 import (
 	"Backend/pkg/events"
-	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
-	"strconv"
 )
 
 const channelBufSize = 100
 
 // Client struct holds client-specific variables.
 type Client struct {
-	ID     uint32
+	ID     uint32					`json:"player_id,omitempty"`
 	ws     *websocket.Conn
-	ch     chan *[]byte
+	ch     chan interface{}
 	doneCh chan bool
 	sr     *SimulationRouter
 }
@@ -25,13 +23,18 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 		panic("ws cannot be nil")
 	}
 
-	ch := make(chan *[]byte, channelBufSize)
+	ch := make(chan interface{}, channelBufSize)
 	doneCh := make(chan bool)
 
-	_, data, _ := ws.ReadMessage()
-	clientId, _ := strconv.Atoi(string(data))
+	player := struct {
+		Id uint32			`json:"player_id,omitempty"`
+	}{}
+	err := ws.ReadJSON(&player)
+	if err != nil {
+		log.Print("Error reading player ID")
+	}
 
-	return &Client{uint32(clientId), ws, ch, doneCh, sr}
+	return &Client{player.Id, ws, ch, doneCh, sr}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -40,9 +43,9 @@ func (c *Client) Conn() *websocket.Conn {
 }
 
 // SendMessage sends game state to the client.
-func (c *Client) SendMessage(bytes *[]byte) {
+func (c *Client) SendMessage(data interface{}) {
 	select {
-	case c.ch <- bytes:
+	case c.ch <- data:
 	default:
 		//c.sr.monitor.AddDroppedMessage()
 	}
@@ -72,9 +75,9 @@ func (c *Client) listenWrite() {
 	for {
 		select {
 
-		case bytes := <-c.ch:
+		case data := <-c.ch:
 			//before := time.Now()
-			err := c.ws.WriteMessage(websocket.BinaryMessage, *bytes)
+			err := c.ws.WriteJSON(data)
 			//after := time.Now()
 
 			if err != nil {
@@ -114,27 +117,19 @@ func (c *Client) listenRead() {
 }
 
 func (c *Client) readFromWebSocket() {
-	messageType, data, err := c.ws.ReadMessage()
+	var event events.Event
+	err := c.ws.ReadJSON(&event)
 	if err != nil {
 		log.Println(err)
 
 		c.doneCh <- true
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
-	} else if messageType != websocket.TextMessage {
-		log.Println("Non text message received, ignoring")
 	} else {
-		c.unmarshalUserInput(data)
+		c.unmarshalUserInput(event)
 	}
 }
 
-func (c *Client) unmarshalUserInput(data []byte) {
-	var event events.Event
-	err := json.Unmarshal(data, &event)
-	if err != nil {
-		log.Fatalln("Failed to unmarshal UserInput:", err)
-		return
-	}
-
+func (c *Client) unmarshalUserInput(event events.Event) {
 	switch event.EventType {
 
 	case events.GAME_CREATE:

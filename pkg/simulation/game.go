@@ -63,6 +63,8 @@ type GameState struct {
 	TriumphCard *state.Card `json:"triumph_card"`
 
 	Arrastre bool `json:"arrastre"`
+
+	Ended bool `json:"ended"`
 }
 
 // NewGame returns a game in its initial state, with the deck shuffled

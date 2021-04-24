@@ -3,7 +3,6 @@ package server
 import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -60,21 +59,15 @@ func (sr *SimulationRouter) Handler (w http.ResponseWriter, r *http.Request) {
 	sr.clients[client.ID] = client
 
 	//sr.EventsDispatcher.FireUserConnected(&events.UserConnected{PlayerID: client.ID})
-	sr.SendToClient(client.ID, client.ID)
 
 	log.Println("Added new client. Now", len(sr.clients), "clients connected.")
 	client.Listen()
 }
 
 func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
-	j, err := json.Marshal(data)
-	if err != nil {
-		return
-	}
-
 	client, ok := sr.clients[clientID]
 	if ok {
-		client.SendMessage(&j)
+		client.SendMessage(data)
 	} else {
 		log.Printf("Client %d not found\n", clientID)
 		return
@@ -84,7 +77,7 @@ func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
 func (sr *SimulationRouter) HandleStateChanged (stateChangedEvent *events.StateChanged) {
 	clientsID := stateChangedEvent.ClientsID
 	for _, c := range clientsID {
-		sr.SendToClient(c, stateChangedEvent.Game)
+		sr.SendToClient(c, &stateChangedEvent.Game)
 	}
 
 }
