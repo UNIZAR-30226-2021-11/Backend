@@ -11,6 +11,7 @@ type Player struct {
 	Pair      int    `json:"pair"`
 	CanPlay   bool   `json:"can_play"`
 	CanSing   bool   `json:"can_sing"`
+	CanChange bool   `json:"can_change"`
 
 	SingingSuits []string `json:"singing_suits"`
 	singSuit1    bool     `json:"sing_oros"`
