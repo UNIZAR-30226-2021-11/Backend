@@ -18,6 +18,7 @@ func TestCantar(t *testing.T) {
 func TestName(t *testing.T) {
 
 }
+
 func TestInitGame(t *testing.T) {
 
 	var g *Game
@@ -37,7 +38,7 @@ func TestInitGame(t *testing.T) {
 			t.Errorf("got %v, want %v", count, 1)
 		}
 	})
-
+	g.GameState.TriumphCard = g.deck.PickCard()
 	t.Run("serialization json", func(t *testing.T) {
 		b, err := json.Marshal(g.GameState)
 		if err != nil {
