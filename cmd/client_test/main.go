@@ -2,15 +2,16 @@ package main
 
 import (
 	"Backend/pkg/events"
+	"Backend/pkg/simulation"
 	"Backend/pkg/state"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/url"
-	"time"
 )
 
 const (
-	NUM_CLIENT = 1
+	NUM_CLIENT = 4
 )
 
 func main() {
@@ -18,30 +19,34 @@ func main() {
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
-		c := Client{Id: uint32(40)}
+		c := Client{Id: uint32(40+i)}
 		c.Start()
 		clients = append(clients, c)
 	}
 
 	clients[0].CreateGame(1)
 
-	//for i := 1; i < NUM_CLIENT; i++ {
-	//	clients[i].JoinGame(1)
-	//}
+	for i := 1; i < NUM_CLIENT; i++ {
+		clients[i].JoinGame(1)
+	}
 
-	time.Sleep(time.Second * 10)
-	clients[0].PlayCard()
+	for {
+
+	}
+
+	//time.Sleep(time.Second * 10)
+	//clients[0].PlayCard()
 }
 
 type Client struct {
 	*websocket.Conn
-	Id uint32
+	Id uint32			`json:"player_id,omitempty"`
 }
 
 func (c *Client) Start() {
 	c.Conn = newWsConn()
 
-	c.WriteMessage(websocket.TextMessage, c.Id)
+	c.WriteJSON(&c)
 
 	// Receive messages
 	go func() {
@@ -52,8 +57,14 @@ func (c *Client) Start() {
 			}
 		}()
 		for {
-			_, message, _ := c.ReadMessage()
-			log.Printf("Client %v:Message received: %s", c.Id, message)
+			var state simulation.GameState
+			err := c.ReadJSON(&state)
+			if err != nil {
+				log.Print("Error reading JSON")
+			}
+			log.Printf("Client %v:Message received: %v", c.Id, state)
+			bytes, err := json.Marshal(&state)
+			log.Printf("%s", bytes)
 		}
 	}()
 }
