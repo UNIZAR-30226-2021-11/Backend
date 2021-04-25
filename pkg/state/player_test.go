@@ -6,25 +6,24 @@ import (
 )
 
 var (
-	ID_NEW_PLAYER = 0
-	PAIR          = 0
+	ID_NEW_PLAYER uint32
+	PAIR          uint32
+	USERNAME      = "PEPE"
 )
 
 func TestCreatePlayer(t *testing.T) {
 
-	id := 2134
-	pair := 2
-	p1 := CreatePlayer(uint32(id), pair)
+	p1 := CreatePlayer(ID_NEW_PLAYER, PAIR, USERNAME)
 
-	if p1.Id != uint32(id) {
-		t.Errorf("got %v, want %v", p1.Id, id)
+	if p1.Id != ID_NEW_PLAYER {
+		t.Errorf("got %v, want %v", p1.Id, ID_NEW_PLAYER)
 	}
 }
 
 func TestSerializePlayer(t *testing.T) {
-	id := 2134
-	pair := 2
-	p1 := CreatePlayer(uint32(id), pair)
+
+	p1 := CreateTestPlayer()
+
 	cards := [6]*Card{
 		CreateCard(SUIT4, 5),
 		CreateCard(SUIT4, 1),
@@ -44,9 +43,7 @@ func TestSerializePlayer(t *testing.T) {
 }
 
 func TestPlayer_PlayCard(t *testing.T) {
-	id := 2134
-	pair := 2
-	p1 := CreatePlayer(uint32(id), pair)
+	p1 := CreateTestPlayer()
 	cs := [6]*Card{
 		CreateCard(SUIT4, 5),
 		CreateCard(SUIT4, 1),
@@ -92,5 +89,5 @@ func CreateTestPlayer() *Player {
 		PAIR++
 	}()
 
-	return CreatePlayer(uint32(ID_NEW_PLAYER), PAIR%2)
+	return CreatePlayer(ID_NEW_PLAYER, PAIR%2, USERNAME)
 }

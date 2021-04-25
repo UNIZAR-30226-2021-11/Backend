@@ -8,7 +8,8 @@ import (
 
 var (
 	ID_NEW_PLAYER uint32
-	PAIR          = 0
+	PAIR          uint32
+	USERNAME      = "PEPE"
 )
 
 func TestCantar(t *testing.T) {
@@ -334,7 +335,7 @@ func CreateTestPlayer() *state.Player {
 		PAIR++
 	}()
 
-	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2+1)
+	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2+1, USERNAME)
 }
 
 func sumPoints(rs [10]*round) (sum int) {
