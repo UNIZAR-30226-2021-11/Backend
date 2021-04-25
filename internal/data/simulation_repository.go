@@ -29,8 +29,9 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 
 	sr.eventDispatcher.FireUserJoined(&events.UserJoined{
 		PlayerID: gameCreateEvent.PlayerID,
+		PairID: gameCreateEvent.PairID,
 		GameID:   gameCreateEvent.GameID,
-		UserName: "usuario de prueba",
+		UserName: gameCreateEvent.UserName,
 	})
 }
 
@@ -38,48 +39,76 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
 		Id: userJoinedEvent.PlayerID,
+		Pair: userJoinedEvent.PairID,
 	}
 
 	sr.futureGames[gameId] <- player
 	players := sr.futureGames[gameId]
 
 	if len(players) == 4 {
-		var ps []*state.Player
-		for i := 0; i < 4; i++ {
-			ps = append(ps, <-players)
-		}
-		game := simulation.NewGame(ps)
-		//game.InitGame()
-		sr.games[gameId] = game
-		event := &events.StateChanged{
-			ClientsID: game.GetPlayersID(),
-			Game:      game.GameState,
-		}
-		sr.eventDispatcher.FireStateChanged(event)
-		delete(sr.futureGames, gameId)
+		sr.startNewGame(players, gameId)
 	}
 }
 
-func (sr *SimulationRepository) HandleUserLeft(userLeftEvent events.UserLeft) {
-	//TODO
+func (sr *SimulationRepository) startNewGame(playersChan chan *state.Player, gameId uint32) {
+	var playersArray []*state.Player
+	player :=  <-playersChan
+	firstPair := player.Pair
+	player.Pair = 1
+	playersArray = append(playersArray, player)
+	for i := 0; i < 3; i++ {
+		player :=  <-playersChan
+		if player.Pair != firstPair {
+			player.Pair = 2
+		} else {
+			player.Pair = 1
+		}
+		playersArray = append(playersArray,player)
+	}
+	game := simulation.NewGame(playersArray)
+
+	sr.games[gameId] = game
+	event := &events.StateChanged{
+		ClientsID: game.GetPlayersID(),
+		Game:      game.GameState,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
+	delete(sr.futureGames, gameId)
+}
+
+func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
+	//TODO: cambiar usuario por IA
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
-	gameId := cardPlayedEvent.GameID
-	game := sr.games[gameId]
-
+	game := sr.games[cardPlayedEvent.GameID]
 	game.HandleCardPlayed(cardPlayedEvent.Card)
+
 	event := &events.StateChanged{
 		ClientsID: game.GetPlayersID(),
-		Game:      game,
+		Game:      game.GameState,
 	}
 	sr.eventDispatcher.FireStateChanged(event)
 }
 
 func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardChanged) {
-	//TODO
+	game := sr.games[cardChangedEvent.GameID]
+	game.HandleChangedCard(cardChangedEvent.Changed)
+
+	event := &events.StateChanged{
+		ClientsID: game.GetPlayersID(),
+		Game:      game.GameState,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
 }
 
 func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
-	//TODO
+	game := sr.games[singEvent.GameID]
+	game.HandleSing(singEvent.Suit, singEvent.HasSinged)
+
+	event := &events.StateChanged{
+		ClientsID: game.GetPlayersID(),
+		Game:      game.GameState,
+	}
+	sr.eventDispatcher.FireStateChanged(event)
 }

@@ -10,7 +10,8 @@ type Player struct {
 	cardCount  int
 	internPair int
 	Id         uint32 `json:"id"`
-	Pair       int    `json:"pair"`
+	Pair       uint32    `json:"pair"`
+	UserName  string `json:"username"`
 
 	CanPlay   bool `json:"can_play"`
 	CanSing   bool `json:"can_sing"`
@@ -24,10 +25,11 @@ type Player struct {
 }
 
 // CreatePlayer Creates a new player with its ID and a pair ID
-func CreatePlayer(id uint32, pair int) *Player {
+func CreatePlayer(id uint32, pair uint32, username string) *Player {
 	return &Player{
 		Id:   id,
 		Pair: pair,
+		UserName: username,
 	}
 }
 

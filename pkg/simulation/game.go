@@ -41,8 +41,8 @@ type Game struct {
 
 	winnerLastRound *cardPlayed
 	topCard         *state.Card
-	winnerLast10    int
-	winnerPair      int
+	winnerLast10    uint32
+	winnerPair      uint32
 }
 
 type GameState struct {
