@@ -10,8 +10,8 @@ type Player struct {
 	cardCount  int
 	internPair int
 	Id         uint32 `json:"id"`
-	Pair       uint32    `json:"pair"`
-	UserName  string `json:"username"`
+	Pair       uint32 `json:"pair"`
+	UserName   string `json:"username"`
 
 	CanPlay   bool `json:"can_play"`
 	CanSing   bool `json:"can_sing"`
@@ -24,11 +24,11 @@ type Player struct {
 	singSuit4    bool     `json:"sing_bastos"`
 }
 
-// CreatePlayer Creates a new player with its ID and a pair ID
+// CreatePlayer Creates a new player with its ID and a pair ID.
 func CreatePlayer(id uint32, pair uint32, username string) *Player {
 	return &Player{
-		Id:   id,
-		Pair: pair,
+		Id:       id,
+		Pair:     pair,
 		UserName: username,
 	}
 }
@@ -42,7 +42,7 @@ func (p *Player) PlayCard(card *Card) {
 	}
 }
 
-// Plays the Card and compacts it
+// Plays the Card and compacts it.
 func (p *Player) playCard(cardNumber int) {
 	p.Cards[cardNumber] = nil
 	for i := cardNumber; i < len(p.Cards)-1; i++ {
@@ -52,18 +52,18 @@ func (p *Player) playCard(cardNumber int) {
 	p.cardCount--
 }
 
-// Deals a Card to the Player
+// Deals a Card to the Player.
 func (p *Player) dealCard(card *Card) {
 	p.Cards[5] = card
 	p.cardCount++
 }
 
-// sameId check if is the Player with this id
+// sameId check if is the Player with this id.
 func (p *Player) sameId(id uint32) bool {
 	return p.Id == id
 }
 
-// DealCards Deals 6 cards to the player
+// DealCards Deals 6 cards to the player.
 func (p *Player) DealCards(cards [6]*Card) {
 	for i, card := range cards {
 		p.Cards[i] = card
@@ -71,7 +71,7 @@ func (p *Player) DealCards(cards [6]*Card) {
 	p.cardCount = 6
 }
 
-// HasSing Checks if the player has singing pair and updates the record
+// HasSing Checks if the player has singing pair and updates the record.
 func (p *Player) HasSing() ([]string, bool) {
 	var suitSings []string
 	for _, c1 := range p.Cards {
@@ -85,7 +85,7 @@ func (p *Player) HasSing() ([]string, bool) {
 	return suitSings, len(suitSings) > 0
 }
 
-// ChangeCard changes the seven for the top card in the deck
+// ChangeCard changes the seven for the top card in the deck.
 func (p *Player) ChangeCard(triumph string, card *Card) {
 	for _, c := range p.Cards {
 		if c != nil && c.IsTriumph(triumph) && c.Val == 7 {
@@ -94,7 +94,7 @@ func (p *Player) ChangeCard(triumph string, card *Card) {
 	}
 }
 
-// GetSeven returns the seven from the player hand
+// GetSeven returns the seven from the player hand.
 func (p *Player) GetSeven(triumph string) *Card {
 	for _, card := range p.Cards {
 		if card != nil && card.IsTriumph(triumph) && card.Val == 7 {
@@ -104,7 +104,7 @@ func (p *Player) GetSeven(triumph string) *Card {
 	return nil
 }
 
-// PickRandomCard returns a random card from the player's hand
+// PickRandomCard returns a random card from the player's hand.
 func (p *Player) PickRandomCard(seed int64) (c *Card) {
 	rand.Seed(seed)
 	for c == nil {
@@ -113,11 +113,12 @@ func (p *Player) PickRandomCard(seed int64) (c *Card) {
 	return c
 }
 
-// PickCard returns a card from the player's hand
+// PickCard returns a card from the player's hand.
 func (p *Player) PickCard(card int) (c *Card) {
 	return p.Cards[card]
 }
 
+// SetPlay changes if this player can play.
 func (p *Player) SetPlay(canPlay bool) {
 	p.CanPlay = canPlay
 }

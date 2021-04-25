@@ -15,7 +15,8 @@ const STATES = 5
 
 var (
 	ID_NEW_PLAYER uint32
-	PAIR          = 0
+	PAIR          uint32
+	USERNAME      = "PEPE"
 )
 
 var testGames = createSimulationGames()
@@ -152,5 +153,5 @@ func CreateTestPlayer() *state.Player {
 		PAIR++
 	}()
 
-	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2+1)
+	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2, USERNAME)
 }

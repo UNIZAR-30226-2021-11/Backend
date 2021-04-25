@@ -11,7 +11,7 @@ type Card struct {
 	Playable bool   `json:"playable"`
 }
 
-// Creates a new card with the correct Points and value
+// CreateCard Creates a new card with the correct Points and value
 func CreateCard(suit string, val int) *Card {
 
 	return &Card{
@@ -21,17 +21,17 @@ func CreateCard(suit string, val int) *Card {
 	}
 }
 
-// Changes the playability of the card
+// AllowPlay Changes the playability of the card
 func (c *Card) AllowPlay(canBePlayed bool) {
 	c.Playable = canBePlayed
 }
 
-// Checks wether this card can be played or not
+// CanBePlayed Checks wether this card can be played or not
 func (c *Card) CanBePlayed() bool {
 	return c.Playable
 }
 
-// Checks if the value of c2 is less than that of c
+// Wins Checks if the value of c2 is less than that of c
 // They must be of the same Suit
 func (c *Card) Wins(c2 *Card) bool {
 	// If the have no value, check with order
@@ -41,17 +41,17 @@ func (c *Card) Wins(c2 *Card) bool {
 	return c.Points > c2.Points
 }
 
-// Checks if the card is triumph
+// IsTriumph Checks if the card is triumph
 func (c *Card) IsTriumph(triumph string) bool {
 	return c.Suit == triumph
 }
 
-// Checks whether the cards have the same Suit
+// SameSuit Checks whether the cards have the same Suit
 func (c *Card) SameSuit(c2 *Card) bool {
 	return c.Suit == c2.Suit
 }
 
-// Checks if th
+// IsSingingPair Checks if th
 func (c *Card) IsSingingPair(c2 *Card) bool {
 	if c.SameSuit(c2) {
 		return (c.Val == 10 || c.Val == 12) && (c2.Val == 10 || c2.Val == 12)
