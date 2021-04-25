@@ -6,7 +6,8 @@ import (
 )
 
 func TestRoundPlayed(t *testing.T) {
-	r := NewRound(0, state.SUIT1)
+	r := NewRound(state.SUIT1)
+	ps := createTestPlayers()
 
 	cards := []*state.Card{
 		state.CreateCard(state.SUIT4, 5),
@@ -17,8 +18,11 @@ func TestRoundPlayed(t *testing.T) {
 	winnerCard := cards[1]
 	t.Run("no_winner_at_start", func(t *testing.T) {
 
-		winner, _ := r.checkWinner()
-		if winner {
+		err := r.checkWinner()
+		if err == nil {
+			t.Errorf("not enough cards played")
+		}
+		if r.winner != nil {
 			t.Error("got a winner, shouldn't be")
 		}
 	})
@@ -29,7 +33,7 @@ func TestRoundPlayed(t *testing.T) {
 			if i != r.pos {
 				t.Errorf("got %v, want %v", r.pos, i)
 			}
-			r.playedCard(card)
+			r.playedCard(ps[i], card)
 		}
 	})
 
@@ -42,8 +46,12 @@ func TestRoundPlayed(t *testing.T) {
 	})
 
 	t.Run("winner_at_end", func(t *testing.T) {
-		winner, _ := r.checkWinner()
-		if !winner {
+
+		err := r.checkWinner()
+		if err != nil {
+			t.Errorf("not enough cards played")
+		}
+		if r.winner == nil {
 			t.Error("didn't get a winner, should be")
 		}
 	})
@@ -79,7 +87,9 @@ func TestRoundPlayed(t *testing.T) {
 	})
 }
 func TestRoundPlayedWithTriumph(t *testing.T) {
-	r := NewRound(0, state.SUIT1)
+	ps := createTestPlayers()
+
+	r := NewRound(state.SUIT1)
 	cards := []*state.Card{
 		state.CreateCard(state.SUIT4, 5),
 		state.CreateCard(state.SUIT4, 1),
@@ -89,8 +99,11 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 	winnerCard := cards[3]
 	t.Run("no_winner_at_start", func(t *testing.T) {
 
-		winner, _ := r.checkWinner()
-		if winner {
+		err := r.checkWinner()
+		if err == nil {
+			t.Errorf("not enough cards played")
+		}
+		if r.winner != nil {
 			t.Error("got a winner, shouldn't be")
 		}
 	})
@@ -101,7 +114,7 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 			if i != r.pos {
 				t.Errorf("got %v, want %v", r.pos, i)
 			}
-			r.playedCard(card)
+			r.playedCard(ps[i], card)
 		}
 	})
 
@@ -115,8 +128,11 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 
 	t.Run("winner_at_end", func(t *testing.T) {
 
-		winner, _ := r.checkWinner()
-		if !winner {
+		err := r.checkWinner()
+		if err != nil {
+			t.Errorf("not enough cards played")
+		}
+		if r.winner == nil {
 			t.Error("didn't get a winner, should be")
 		}
 	})

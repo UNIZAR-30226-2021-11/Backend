@@ -25,18 +25,19 @@ type Deck struct {
 
 // Creates a new ordered Deck
 func NewDeck() *Deck {
-	baraja := Deck{}
+	d := Deck{}
 	i := 0
 	for _, suit := range suits {
 		for _, c := range cards {
-			baraja.cards[i] = CreateCard(suit, c)
+			d.cards[i] = CreateCard(suit, c)
 			i++
 		}
 	}
-	return &baraja
+	d.triumph = d.cards[39].Suit
+	return &d
 }
 
-// Shuffles the Deck
+// Shuffle Shuffles the Deck
 func (d *Deck) Shuffle() {
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(d.cards), func(i, j int) {
@@ -45,6 +46,7 @@ func (d *Deck) Shuffle() {
 	d.triumph = d.cards[39].Suit
 }
 
+// ChangeCard changes the seven card for the triumph
 func (d *Deck) ChangeCard(seven *Card) (c *Card) {
 	d.cards[39], c = c, d.cards[39]
 	return c

@@ -52,7 +52,7 @@ func TestInitGame(t *testing.T) {
 func TestPlayOneCard(t *testing.T) {
 	ps := createTestPlayers()
 	g := NewGame(ps)
-	initial := g.currentPlayer
+	initial := g.GameState.Players.Current()
 	c := initial.Cards[0]
 
 	t.Run("play one card", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestPlayOneCard(t *testing.T) {
 	})
 
 	t.Run("updated current player", func(t *testing.T) {
-		current := g.currentPlayer
+		current := g.GameState.Players.Current()
 		if initial.Id == current.Id {
 			t.Errorf("got same id")
 		}
@@ -87,17 +87,17 @@ func TestPlayRound(t *testing.T) {
 	g := NewGame(ps)
 
 	var cardsPlayed []*state.Card
-	r := NewRound(0, g.deck.GetTriumph())
+	r := NewRound(g.deck.GetTriumph())
 
 	for i := 0; i < 4; i++ {
-		c := g.currentPlayer.PickRandomCard(0)
+		c := g.GameState.Players.Current().PickRandomCard(0)
 		g.HandleCardPlayed(c)
-		r.playedCard(c)
+		r.playedCard(g.GameState.Players.Current(), c)
 		cardsPlayed = append(cardsPlayed, c)
 	}
 	r.checkWinner()
 	t.Run("check same winner", func(t *testing.T) {
-		if !r.winner.Equals(g.rounds[0].winner) {
+		if !r.winner.Equals(g.rounds[0].winner.Card) {
 			t.Errorf("got %v, want %v", g.rounds[0].winner, r.winner)
 		}
 	})
@@ -111,7 +111,7 @@ func TestPlayRound(t *testing.T) {
 	})
 
 	t.Run("winner team has points", func(t *testing.T) {
-		if g.winnerPairLastRound == 0 {
+		if g.winnerLastRound.Pair == 0 {
 			t.Errorf("not updated winner pair")
 		}
 		want := r.Points()
@@ -125,6 +125,86 @@ func TestPlayRound(t *testing.T) {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
+
+	t.Run("check integrity", func(t *testing.T) {
+		if g.winnerLastRound.Player != g.GameState.Players.Current() {
+			t.Errorf("Distinto jugador")
+		}
+		if g.currentRound != 1 {
+			t.Errorf("mala ronda")
+		}
+		if g.GameState.Players.Current() != g.winnerLastRound.Player {
+			t.Errorf("Distinto jugador")
+		}
+	})
+
+}
+
+func TestPlay2Round(t *testing.T) {
+	ps := createTestPlayers()
+	g := NewGame(ps)
+
+	var cardsPlayed []*state.Card
+	r := NewRound(g.deck.GetTriumph())
+
+	for i := 0; i < 4; i++ {
+		p := g.GameState.Players.Current()
+		c := p.PickRandomCard(0)
+		g.HandleCardPlayed(c)
+		r.playedCard(p, c)
+		cardsPlayed = append(cardsPlayed, c)
+	}
+	r.checkWinner()
+	t.Run("check same winner", func(t *testing.T) {
+		if !r.winner.Equals(g.rounds[0].winner.Card) {
+			t.Errorf("got %v, want %v", g.rounds[0].winner, r.winner)
+		}
+	})
+
+	t.Run("next round has correct player", func(t *testing.T) {
+		if g.GameState.Players.Current().Id != r.winner.Player.Id {
+			t.Errorf("got %v, want %v",
+				g.GameState.Players.Current().Id, r.winner.Player.Id)
+		}
+	})
+
+}
+
+func TestDealedCards(t *testing.T) {
+	ps := createTestPlayers()
+	g := NewGame(ps)
+
+	var cardsPlayed []*state.Card
+	r := NewRound(g.deck.GetTriumph())
+
+	for i := 0; i < 4; i++ {
+		c := g.GameState.Players.Current().PickRandomCard(0)
+		g.HandleCardPlayed(c)
+		r.playedCard(g.GameState.Players.Current(), c)
+		cardsPlayed = append(cardsPlayed, c)
+	}
+	if checkDistinctCards(t, g) {
+		t.Errorf("players have same cards")
+	}
+
+}
+
+func checkDistinctCards(t *testing.T, g *Game) bool {
+	for _, p1 := range g.GameState.Players.All {
+		for _, c1 := range p1.Cards {
+			for _, p2 := range g.GameState.Players.All {
+				if p1.Id != p2.Id {
+					for _, c2 := range p2.Cards {
+						if c1 != nil && c2 != nil && c1.Equals(c2) {
+							t.Errorf("%v, %v", c1, c2)
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func TestPlayAllRounds(t *testing.T) {
@@ -132,16 +212,32 @@ func TestPlayAllRounds(t *testing.T) {
 	g := NewGame(ps)
 
 	var cardsPlayed []*state.Card
-	r := NewRound(0, g.deck.GetTriumph())
 
-	for rounds := 0; rounds < 10; rounds++ {
+	for rs := 0; rs < 10; rs++ {
 		for i := 0; i < 4; i++ {
-			c := g.currentPlayer.PickCard(0)
+			p := g.GameState.Players.Current()
+			c := p.PickCard(0)
 			g.HandleCardPlayed(c)
-			r.playedCard(c)
 			cardsPlayed = append(cardsPlayed, c)
 		}
+
+		t.Run("dealed distinct cards", func(t *testing.T) {
+			checkDistinctCards(t, g)
+		})
+
+		t.Run("just one player can play", func(t *testing.T) {
+			count := 0
+			for _, p := range ps {
+				if p.CanPlay {
+					count++
+				}
+			}
+			if count > 1 {
+				t.Errorf("more than 1 player can play")
+			}
+		})
 	}
+
 	t.Run("game state ended", func(t *testing.T) {
 		if g.winnerPair != 0 && g.GameState.currentState != ended {
 			t.Errorf("got %v, want %v", g.GameState.currentState, ended)
@@ -150,12 +246,28 @@ func TestPlayAllRounds(t *testing.T) {
 			t.Logf("Winner team: %v", g.winnerPair)
 		}
 		t.Logf("Puntos A: %v Puntos B: %v Sum: %v",
-			g.GetTeamPoints(1), g.GetTeamPoints(2), g.GetTeamPoints(1)+g.GetTeamPoints(2))
+			g.GetTeamPoints(1),
+			g.GetTeamPoints(2),
+			g.GetTeamPoints(1)+g.GetTeamPoints(2))
+	})
+
+	t.Run("correct cards played", func(t *testing.T) {
+		if len(cardsPlayed) != 40 {
+			t.Errorf("got %v, want 40", len(cardsPlayed))
+		}
 	})
 
 	t.Run("correct total points", func(t *testing.T) {
 		if sumPoints(g.rounds) != 120 {
 			t.Errorf("got %v, want %v", sumPoints(g.rounds), 120)
+		}
+
+		sum := 0
+		for _, c := range cardsPlayed {
+			sum += c.Points
+		}
+		if sum != 120 {
+			t.Errorf("got %v, want %v", sum, 120)
 		}
 	})
 
@@ -169,6 +281,15 @@ func TestPlayAllRounds(t *testing.T) {
 			t.Logf("doesn't need rematch")
 		}
 	})
+}
+
+func hasBeenPlayed(played []*state.Card, c *state.Card) bool {
+	for _, c2 := range played {
+		if c2.Equals(c) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestInitialCardDealing(t *testing.T) {
@@ -196,11 +317,6 @@ func TestInitialCardDealing(t *testing.T) {
 			}
 		}
 	})
-
-	//t.Run("card played", func(t *testing.T) {
-	//	g.HandleCardPlayed(0, state.CreateCard())
-	//	g.rounds[g.currentRound].triumph
-	//})
 }
 
 func createTestPlayers() []*state.Player {
@@ -209,10 +325,6 @@ func createTestPlayers() []*state.Player {
 		players = append(players, CreateTestPlayer())
 	}
 	return players
-}
-
-func createGame(players []*state.Player) *Game {
-	return NewGame(players)
 }
 
 func CreateTestPlayer() *state.Player {

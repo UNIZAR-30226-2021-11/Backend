@@ -19,7 +19,7 @@ func main() {
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
-		c := Client{Id: uint32(40+i)}
+		c := Client{Id: uint32(40 + i)}
 		c.Start()
 		clients = append(clients, c)
 	}
@@ -30,6 +30,7 @@ func main() {
 		clients[i].JoinGame(1)
 	}
 
+	clients[0].PlayCard()
 	for {
 
 	}
@@ -40,7 +41,7 @@ func main() {
 
 type Client struct {
 	*websocket.Conn
-	Id uint32			`json:"player_id,omitempty"`
+	Id uint32 `json:"player_id,omitempty"`
 }
 
 func (c *Client) Start() {
@@ -98,7 +99,7 @@ func (c *Client) PlayCard() {
 }
 
 func newWsConn() *websocket.Conn {
-	u := url.URL{Scheme: "ws", Host: ":9000", Path: "/simulation"}
+	u := url.URL{Scheme: "ws", Host: "15.188.14.213:11050", Path: "/simulation"}
 
 	// Establish connection
 	c, _, _ := websocket.DefaultDialer.Dial(u.String(), nil)

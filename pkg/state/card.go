@@ -1,5 +1,7 @@
 package state
 
+import "fmt"
+
 // Card represents a guiñote Card
 // Val allowed [1-7] [10-12]
 type Card struct {
@@ -85,4 +87,8 @@ func getPoints(cardName int) int {
 	default:
 		return 0
 	}
+}
+
+func (c *Card) String() string {
+	return fmt.Sprintf("%d de %s", c.Val, c.Suit)
 }

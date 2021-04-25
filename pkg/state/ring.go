@@ -19,6 +19,7 @@ type ringNode struct {
 
 // NewPlayerRing creates a new 4 Player ring
 func NewPlayerRing(players []*Player) *Ring {
+	// TODO TENER EN CUENTA LA PAREJA
 	var r Ring
 	var first ringNode
 	for i, player := range players {
@@ -53,6 +54,7 @@ func NewPlayerRing(players []*Player) *Ring {
 func (r *Ring) SetFirstPlayer(p *Player) {
 	//
 	for !r.ringNode.p.sameId(p.Id) {
+		r.p.SetPlay(false)
 		r.ringNode = r.next
 	}
 	r.p.SetPlay(true)
@@ -128,4 +130,8 @@ func (r *Ring) GetPlayersIds() (ids []uint32) {
 
 func (r *Ring) Current() *Player {
 	return r.p
+}
+
+func (r *Ring) String() string {
+	return r.p.String()
 }

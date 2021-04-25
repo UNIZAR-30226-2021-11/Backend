@@ -39,12 +39,10 @@ type Game struct {
 	pairCanSing     bool
 	pairCanSwapCard bool
 
-	currentPlayer       *state.Player
-	winnerLastRound     *state.Player
-	topCard             *state.Card
-	winnerLast10        int
-	winnerPair          int
-	winnerPairLastRound int
+	winnerLastRound *cardPlayed
+	topCard         *state.Card
+	winnerLast10    int
+	winnerPair      int
 }
 
 type GameState struct {
@@ -53,10 +51,10 @@ type GameState struct {
 	PointsSingA int `json:"points_sing_a"`
 	PointsSingB int `json:"points_sing_b"`
 
-	currentState  int
-	CurrentRound  int    `json:"current_round"`
-	CurrentPlayer uint32 `json:"current_player"`
-	Vueltas       bool   `json:"vueltas"`
+	currentState int
+	CurrentRound int `json:"current_round"`
+	//CurrentPlayer uint32 `json:"current_player"`
+	Vueltas bool `json:"vueltas"`
 
 	Players *state.Ring `json:"players"`
 
@@ -91,12 +89,9 @@ func NewGame(p []*state.Player) (g *Game) {
 	g.GameState.Players.SetRandomFirstPlayer()
 
 	// Creates the first round
-	g.rounds[0] = NewRound(g.GameState.Players.Current().Pair, g.deck.GetTriumph())
+	g.rounds[0] = NewRound(g.deck.GetTriumph())
 	g.initialCardDealing()
 
-	first := g.GameState.Players.Current()
-	g.GameState.CurrentPlayer = first.Id
-	g.currentPlayer = first
 	g.GameState.currentState = t1
 	return g
 }
@@ -109,35 +104,22 @@ func (g *Game) initialCardDealing() {
 }
 
 //Starts a new round
-func (g *Game) newRound(firstPlayer *state.Player) {
+func (g *Game) newRound() {
 
 	g.currentRound++
-	g.rounds[g.currentRound] = NewRound(firstPlayer.Pair, g.deck.GetTriumph())
-	if g.currentRound > 6 {
+	g.GameState.Players.SetFirstPlayer(g.winnerLastRound.Player)
+
+	g.rounds[g.currentRound] = NewRound(
+		g.deck.GetTriumph())
+
+	if g.currentRound > 4 {
 		g.GameState.Arrastre = true
 	}
 
 	if !g.GameState.Arrastre {
 		g.dealCards()
 	}
-	g.GameState.Players.SetFirstPlayer(firstPlayer)
 
-}
-
-// Process a card played, advances the player
-func (g *Game) cardPlayed(c *state.Card) {
-	g.rounds[g.currentRound].playedCard(c)
-	g.GameState.Players.Current().PlayCard(c)
-	g.GameState.Players.Next()
-	g.currentPlayer = g.GameState.Players.Current()
-
-}
-
-// Checks for the round winner
-func (g *Game) checkRoundWinner() {
-	_, winnerPos := g.rounds[g.currentRound].checkWinner()
-	g.winnerLastRound = g.GameState.Players.GetN(winnerPos)
-	g.winnerPairLastRound = g.rounds[g.currentRound].pWinner
 }
 
 // Process a new card played
@@ -157,7 +139,6 @@ func (g *Game) processCard(c *state.Card) {
 	case t4:
 		g.cardPlayed(c)
 
-		// TODO actualizar ganador de ronda
 		g.checkRoundWinner()
 		g.updatePoints()
 
@@ -169,11 +150,26 @@ func (g *Game) processCard(c *state.Card) {
 			g.singingState()
 		}
 	}
-	// Cartas jugadas
-	// Nueva ronda
-	// Esperar Cantes
-	// Cambiar 7
-	// Repartir cartas
+}
+
+// Process a card played, advances the player
+func (g *Game) cardPlayed(c *state.Card) {
+	current := g.GameState.Players.Current()
+
+	g.rounds[g.currentRound].playedCard(current, c)
+	current.PlayCard(c)
+
+	g.GameState.Players.Next()
+
+}
+
+// Checks for the round winner
+func (g *Game) checkRoundWinner() {
+
+	winner := g.rounds[g.currentRound].GetWinner()
+
+	g.winnerLastRound = winner
+	g.GameState.Players.SetFirstPlayer(winner.Player)
 }
 
 func (g *Game) updatePoints() {
@@ -196,6 +192,7 @@ func (g *Game) updatePoints() {
 		}
 	}
 }
+
 func (g *Game) checkWinnerVueltas() {
 
 	// TODO comprobar si se ha ganado
@@ -209,6 +206,7 @@ func (g *Game) checkWinnerVueltas() {
 		g.ended()
 	}
 }
+
 func (g *Game) singingState() {
 
 	if !g.pairCanSing {
@@ -229,9 +227,6 @@ func (g *Game) processSing(suit string) {
 func (g *Game) changeCard(hasChanged bool) {
 
 	if hasChanged {
-		seven := g.currentPlayer.GetSeven(g.GameState.TriumphCard.Suit)
-		g.deck.ChangeCard(seven)
-		g.currentPlayer.ChangeCard(g.topCard)
 
 	}
 
@@ -247,7 +242,7 @@ func (g *Game) swapCard() {
 			g.checkWinnerIdas()
 		} else {
 			g.GameState.currentState = t1
-			g.newRound(g.winnerLastRound)
+			g.newRound()
 		}
 	} else {
 

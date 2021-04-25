@@ -51,7 +51,7 @@ func TestPlayer_PlayCard(t *testing.T) {
 		CreateCard(SUIT4, 5),
 		CreateCard(SUIT4, 1),
 		CreateCard(SUIT1, 4),
-		CreateCard(SUIT1, 11),
+		CreateCard(SUIT1, 7),
 		CreateCard(SUIT3, 11),
 		CreateCard(SUIT2, 11),
 	}
@@ -73,6 +73,14 @@ func TestPlayer_PlayCard(t *testing.T) {
 	t.Run("check empty hand", func(t *testing.T) {
 		if p1.cardCount > 0 {
 			t.Errorf("got %v, want %v", p1.cardCount, 0)
+		}
+	})
+
+	t.Run("change 7", func(t *testing.T) {
+		p1.ChangeCard(SUIT1, CreateCard(SUIT1, 1))
+
+		if p1.GetSeven(SUIT1) != nil {
+			t.Errorf("player still has seven")
 		}
 	})
 }

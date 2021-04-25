@@ -1,17 +1,20 @@
 package state
 
 import (
+	"fmt"
 	"math/rand"
 )
 
 type Player struct {
-	Cards     [6]*Card `json:"cards"`
-	cardCount int
-	Id        uint32 `json:"id"`
-	Pair      int    `json:"pair"`
-	CanPlay   bool   `json:"can_play"`
-	CanSing   bool   `json:"can_sing"`
-	CanChange bool   `json:"can_change"`
+	Cards      [6]*Card `json:"cards"`
+	cardCount  int
+	internPair int
+	Id         uint32 `json:"id"`
+	Pair       int    `json:"pair"`
+
+	CanPlay   bool `json:"can_play"`
+	CanSing   bool `json:"can_sing"`
+	CanChange bool `json:"can_change"`
 
 	SingingSuits []string `json:"singing_suits"`
 	singSuit1    bool     `json:"sing_oros"`
@@ -32,6 +35,7 @@ func (p *Player) PlayCard(card *Card) {
 	for i, c := range p.Cards {
 		if c != nil && c.Equals(card) {
 			p.playCard(i)
+			return
 		}
 	}
 }
@@ -80,14 +84,18 @@ func (p *Player) HasSing() ([]string, bool) {
 }
 
 // ChangeCard changes the seven for the top card in the deck
-func (p *Player) ChangeCard(card *Card) {
-
+func (p *Player) ChangeCard(triumph string, card *Card) {
+	for _, c := range p.Cards {
+		if c != nil && c.IsTriumph(triumph) && c.Val == 7 {
+			c = card
+		}
+	}
 }
 
 // GetSeven returns the seven from the player hand
 func (p *Player) GetSeven(triumph string) *Card {
 	for _, card := range p.Cards {
-		if card.IsTriumph(triumph) && card.Val == 7 {
+		if card != nil && card.IsTriumph(triumph) && card.Val == 7 {
 			return card
 		}
 	}
@@ -97,8 +105,10 @@ func (p *Player) GetSeven(triumph string) *Card {
 // PickRandomCard returns a random card from the player's hand
 func (p *Player) PickRandomCard(seed int64) (c *Card) {
 	rand.Seed(seed)
-
-	return p.Cards[rand.Intn(p.cardCount-1)]
+	for c == nil {
+		c = p.Cards[rand.Intn(p.cardCount-1)]
+	}
+	return c
 }
 
 // PickCard returns a card from the player's hand
@@ -108,4 +118,10 @@ func (p *Player) PickCard(card int) (c *Card) {
 
 func (p *Player) SetPlay(canPlay bool) {
 	p.CanPlay = canPlay
+}
+
+func (p *Player) String() string {
+	return fmt.Sprintf(
+		"P:%v,ID:%d Pair %d",
+		p.CanPlay, p.Id, p.Pair)
 }

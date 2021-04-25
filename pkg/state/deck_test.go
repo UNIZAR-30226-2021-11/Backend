@@ -80,3 +80,63 @@ func TestDealAllCards(t *testing.T) {
 		}
 	})
 }
+
+func TestChangeSeven(t *testing.T) {
+	d := NewDeck()
+	d.GetTriumph()
+}
+
+func TestSumCards(t *testing.T) {
+	d := NewDeck()
+
+	t.Run("sum without shuffle", func(t *testing.T) {
+		sum := 0
+		for _, c := range d.cards {
+			sum += c.Points
+		}
+		if sum != 120 {
+			t.Errorf("got %v, want %v", sum, 120)
+		}
+	})
+
+	t.Run("sum after shuffle", func(t *testing.T) {
+		d.Shuffle()
+		sum := 0
+		for _, c := range d.cards {
+			sum += c.Points
+		}
+		if sum != 120 {
+			t.Errorf("got %v, want %v", sum, 120)
+		}
+	})
+}
+
+func TestDeck_Pick4Cards(t *testing.T) {
+	d := NewDeck()
+	cs := d.Pick4Cards()
+
+	t.Run("check distinct cards", func(t *testing.T) {
+		for i, c := range cs {
+			for j := range cs {
+				if i != j {
+					if c.Equals(cs[j]) {
+						t.Errorf("equal cards picked")
+					}
+				}
+			}
+		}
+	})
+
+	d.Shuffle()
+	t.Run("check distinct cards after shuffle", func(t *testing.T) {
+		for i, c := range cs {
+			for j := range cs {
+				if i != j {
+					if c.Equals(cs[j]) {
+						t.Errorf("equal cards picked")
+					}
+				}
+			}
+		}
+	})
+}
