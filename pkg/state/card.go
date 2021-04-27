@@ -90,5 +90,5 @@ func getPoints(cardName int) int {
 }
 
 func (c *Card) String() string {
-	return fmt.Sprintf("%d de %s", c.Val, c.Suit)
+	return fmt.Sprintf("%d de %s, p %v", c.Val, c.Suit, c.Playable)
 }

@@ -13,15 +13,12 @@ type Player struct {
 	Pair       uint32 `json:"pair"`
 	UserName   string `json:"username"`
 
-	CanPlay   bool `json:"can_play"`
-	CanSing   bool `json:"can_sing"`
-	CanChange bool `json:"can_change"`
+	CanPlay   bool   `json:"can_play"`
+	CanSing   bool   `json:"can_sing"`
+	SingSuit  string `json:"sing_suit"`
+	CanChange bool   `json:"can_change"`
 
 	SingingSuits []string `json:"singing_suits"`
-	singSuit1    bool     `json:"sing_oros"`
-	singSuit2    bool     `json:"sing_copas"`
-	singSuit3    bool     `json:"sing_espadas"`
-	singSuit4    bool     `json:"sing_bastos"`
 }
 
 // CreatePlayer Creates a new player with its ID and a pair ID.
@@ -116,6 +113,11 @@ func (p *Player) PickRandomCard(seed int64) (c *Card) {
 // PickCard returns a card from the player's hand.
 func (p *Player) PickCard(card int) (c *Card) {
 	return p.Cards[card]
+}
+
+// GetCards return the non-nil cards
+func (p *Player) GetCards() []*Card {
+	return p.Cards[0:p.cardCount]
 }
 
 // SetPlay changes if this player can play.

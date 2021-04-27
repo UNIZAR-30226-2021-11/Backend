@@ -167,3 +167,125 @@ func TestRoundPlayedWithTriumph(t *testing.T) {
 		}
 	})
 }
+
+func TestRound_CanPlayCards(t *testing.T) {
+
+	r := NewRound(state.SUIT1)
+	/* Arrastre, Triunfo oros
+
+
+	 */
+	cards := []*state.Card{
+		state.CreateCard(state.SUIT2, 3),
+		state.CreateCard(state.SUIT4, 1),
+		state.CreateCard(state.SUIT1, 4),
+		state.CreateCard(state.SUIT1, 11),
+	}
+	arrastre := true
+
+	cardsP2 := []*state.Card{
+		state.CreateCard(state.SUIT4, 5),
+		state.CreateCard(state.SUIT1, 2),
+	}
+
+	t.Run("no suit, triumph", func(t *testing.T) {
+		r.playedCard(CreateTestPlayer(), cards[0])
+		r.CanPlayCards(arrastre, cardsP2)
+		if cardsP2[0].Playable {
+			t.Errorf("shoulnd't be playable,got %v, want %v", cardsP2[0].Playable, false)
+		}
+	})
+
+	r = NewRound(state.SUIT1)
+	cardsP3 := []*state.Card{
+		state.CreateCard(state.SUIT2, 5),
+		state.CreateCard(state.SUIT1, 2),
+	}
+
+	t.Run("suit AND triumph", func(t *testing.T) {
+		r.playedCard(CreateTestPlayer(), cards[0])
+		r.CanPlayCards(arrastre, cardsP3)
+		if !cardsP3[0].Playable && cardsP3[1].Playable {
+			t.Errorf("just same suit card must be playable")
+		}
+	})
+
+	r = NewRound(state.SUIT1)
+	cardsP4 := []*state.Card{
+		state.CreateCard(state.SUIT3, 5),
+		state.CreateCard(state.SUIT4, 2),
+	}
+
+	t.Run("no suit AND no triumph", func(t *testing.T) {
+		r.playedCard(CreateTestPlayer(), cards[0])
+		r.CanPlayCards(arrastre, cardsP4)
+		if !(cardsP4[0].Playable && cardsP4[1].Playable) {
+			t.Errorf("should be all playable")
+		}
+	})
+
+	r = NewRound(state.SUIT1)
+	TRESCOPAS := state.CreateCard(state.SUIT2, 3)
+	ASCOPAS := state.CreateCard(state.SUIT2, 1)
+	cardsP5 := []*state.Card{
+		state.CreateCard(state.SUIT2, 5),
+		ASCOPAS,
+	}
+
+	t.Run("same suit, can win it", func(t *testing.T) {
+		r.playedCard(CreateTestPlayer(), TRESCOPAS)
+		r.CanPlayCards(arrastre, cardsP5)
+
+		if cardsP5[0].Playable {
+			t.Errorf("can play a not winner triumph")
+		}
+		if !cardsP5[1].Playable {
+			t.Errorf("cannot play a winner triumph")
+		}
+	})
+
+	r = NewRound(state.SUIT1)
+	cardsP6 := []*state.Card{
+		state.CreateCard(state.SUIT1, 1),
+		state.CreateCard(state.SUIT1, 12),
+	}
+
+	t.Run("played triumph, can win it", func(t *testing.T) {
+		// AS DE BASTOS
+		r.playedCard(CreateTestPlayer(), state.CreateCard(state.SUIT4, 1))
+		r.playedCard(CreateTestPlayer(), state.CreateCard(state.SUIT1, 3))
+		r.CanPlayCards(arrastre, cardsP6)
+
+		if !cardsP6[0].Playable {
+			t.Errorf("winner card should be playable")
+		}
+		if cardsP6[1].Playable {
+			t.Errorf("! winner triumph shouldn't be playable")
+		}
+		if t.Failed() {
+			t.Logf("%v, %v", cardsP6[0], cardsP6[1])
+		}
+	})
+}
+
+func TestRound_GetCardsPlayed(t *testing.T) {
+	r := NewRound(state.SUIT1)
+	ps := createTestPlayers()
+
+	cards := []*state.Card{
+		state.CreateCard(state.SUIT4, 5),
+		state.CreateCard(state.SUIT4, 1),
+		state.CreateCard(state.SUIT2, 5),
+		state.CreateCard(state.SUIT2, 1),
+	}
+
+	for i, card := range cards {
+		r.playedCard(ps[i], card)
+	}
+
+	for i, card := range r.GetCardsPlayed() {
+		if !card.Equals(cards[i]) {
+			t.Errorf("not the same cards")
+		}
+	}
+}

@@ -43,6 +43,10 @@ type Game struct {
 	topCard         *state.Card
 	winnerLast10    uint32
 	winnerPair      uint32
+
+	// internal
+
+	sings map[string]bool
 }
 
 type GameState struct {
@@ -62,13 +66,20 @@ type GameState struct {
 
 	Arrastre bool `json:"arrastre"`
 
-	Ended bool `json:"ended"`
+	Ended      bool `json:"ended"`
+	WinnerPair int  `json:"winner_pair"` //TODO UPDATE THIS
 }
 
 // NewGame returns a game in its initial state, with the deck shuffled
 // and its first played picked
 func NewGame(p []*state.Player) (g *Game) {
 	r := state.NewPlayerRing(p)
+	sings := make(map[string]bool)
+	sings[state.SUIT1] = false
+	sings[state.SUIT2] = false
+	sings[state.SUIT3] = false
+	sings[state.SUIT4] = false
+
 	g = &Game{
 		currentRound: 0,
 		deck:         state.NewDeck(),
@@ -82,6 +93,7 @@ func NewGame(p []*state.Player) (g *Game) {
 			Vueltas:      false,
 			Players:      r,
 		},
+		sings: sings,
 	}
 	g.deck.Shuffle()
 
@@ -118,6 +130,8 @@ func (g *Game) newRound() {
 
 	if !g.GameState.Arrastre {
 		g.dealCards()
+	} else {
+		//TODO COMPROBAR CARTAS
 	}
 
 }
@@ -141,6 +155,7 @@ func (g *Game) processCard(c *state.Card) {
 
 		g.checkRoundWinner()
 		g.updatePoints()
+		g.updateSings()
 
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
@@ -193,6 +208,31 @@ func (g *Game) updatePoints() {
 	}
 }
 
+// Updates the singing state of a pair
+func (g *Game) updateSings() {
+
+	wp := g.winnerLastRound.Pair
+	for _, p := range g.GameState.Players.All {
+		if p.Pair == wp {
+			suits, canSing := p.HasSing()
+			// If the player has a singing pair
+			if canSing {
+				for _, suit := range suits {
+					// Check if if has been singed
+					singed, ok := g.sings[suit]
+					if ok && !singed {
+						p.CanSing = true
+						p.SingSuit = suit
+
+						// just make one sing at a time
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
 func (g *Game) checkWinnerVueltas() {
 
 	// TODO comprobar si se ha ganado
@@ -221,7 +261,22 @@ func (g *Game) singingState() {
 }
 func (g *Game) processSing(suit string) {
 	g.GameState.currentState = singing
+	g.sings[suit] = true
+	if g.winnerLastRound.Pair == TeamA {
+		if suit == g.GameState.TriumphCard.Suit {
+			g.GameState.PointsSingA += 40
+		} else {
+			g.GameState.PointsSingA += 20
+		}
+	} else {
+		if suit == g.GameState.TriumphCard.Suit {
+			g.GameState.PointsSingB += 40
+		} else {
+			g.GameState.PointsSingB += 20
+		}
+	}
 	//if g.GameState.
+	g.updateSings()
 }
 
 func (g *Game) changeCard(hasChanged bool) {

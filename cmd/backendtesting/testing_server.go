@@ -14,9 +14,9 @@ import (
 const STATES = 5
 
 var (
-	ID_NEW_PLAYER uint32
-	PAIR          uint32
-	USERNAME      = "PEPE"
+	IdNewPlayer uint32
+	PAIR        uint32
+	USERNAME    = "PEPE"
 )
 
 var testGames = createSimulationGames()
@@ -149,9 +149,9 @@ func createGameState(players []*state.Player) *simulation.GameState {
 func CreateTestPlayer() *state.Player {
 
 	defer func() {
-		ID_NEW_PLAYER++
+		IdNewPlayer++
 		PAIR++
 	}()
 
-	return state.CreatePlayer(ID_NEW_PLAYER, PAIR%2, USERNAME)
+	return state.CreatePlayer(IdNewPlayer, PAIR%2, USERNAME)
 }
