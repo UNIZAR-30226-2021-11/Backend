@@ -70,9 +70,46 @@ type GameState struct {
 	WinnerPair int  `json:"winner_pair"` //TODO UPDATE THIS
 }
 
+// Sings keeps track of singed suits
+type Sings struct {
+	// winner last round
+	winnerPair int
+	//
+	sings map[string]bool
+}
+
+func (s *Sings) initialize() {
+	s.sings = make(map[string]bool)
+	s.sings[state.SUIT1] = false
+	s.sings[state.SUIT2] = false
+	s.sings[state.SUIT3] = false
+	s.sings[state.SUIT4] = false
+}
+
+func (s *Sings) updateWinnerPair(wp int) {
+	s.winnerPair = wp
+}
+
+func (s *Sings) singedSuit(suit string) {
+	s.sings[suit] = true
+}
+
+// Checks whether this suits can be singed
+func (s *Sings) canSign(suits []string) (string, bool) {
+	for _, suit := range suits {
+		canSing, ok := s.sings[suit]
+		if ok && !canSing {
+			return suit, true
+		}
+	}
+	return "", false
+}
+
 // NewGame returns a game in its initial state, with the deck shuffled
 // and its first played picked
 func NewGame(p []*state.Player) (g *Game) {
+	var s Sings
+	s.initialize()
 	r := state.NewPlayerRing(p)
 	sings := make(map[string]bool)
 	sings[state.SUIT1] = false
@@ -249,6 +286,7 @@ func (g *Game) checkWinnerVueltas() {
 
 func (g *Game) singingState() {
 
+	// TODO Cambiar esta condición
 	if !g.pairCanSing {
 		g.GameState.currentState = swap7
 		g.swapCard()
@@ -259,9 +297,11 @@ func (g *Game) singingState() {
 	}
 
 }
+
 func (g *Game) processSing(suit string) {
 	g.GameState.currentState = singing
 	g.sings[suit] = true
+
 	if g.winnerLastRound.Pair == TeamA {
 		if suit == g.GameState.TriumphCard.Suit {
 			g.GameState.PointsSingA += 40
@@ -275,7 +315,6 @@ func (g *Game) processSing(suit string) {
 			g.GameState.PointsSingB += 20
 		}
 	}
-	//if g.GameState.
 	g.updateSings()
 }
 

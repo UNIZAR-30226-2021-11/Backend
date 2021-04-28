@@ -13,11 +13,66 @@ var (
 )
 
 func TestCantar(t *testing.T) {
+	p := state.CreatePlayer(0, 0, "pepe")
+	p.DealCards([6]*state.Card{
+		state.CreateCard(state.SUIT1, 10),
+		state.CreateCard(state.SUIT2, 10),
+		state.CreateCard(state.SUIT3, 10),
+		state.CreateCard(state.SUIT1, 12),
+		state.CreateCard(state.SUIT2, 12),
+		state.CreateCard(state.SUIT3, 12),
+	})
+	var s Sings
+	s.initialize()
+	suits, canSing := p.HasSing()
+	t.Run("player must sing", func(t *testing.T) {
 
-}
+		if !canSing {
+			t.Errorf("got %v, want %v", canSing, !canSing)
+		}
+	})
 
-func TestName(t *testing.T) {
+	t.Run("sing 1 must be allowed", func(t *testing.T) {
+		suit, canSing := s.canSign(suits)
+		if !canSing {
+			t.Errorf("got %v, want %v", canSing, !canSing)
+		}
 
+		if suit != state.SUIT1 {
+			t.Errorf("got %v, want %v", suit, state.SUIT1)
+		}
+	})
+	s.singedSuit(state.SUIT1)
+	t.Run("sing 2 must be allowed", func(t *testing.T) {
+		suit, canSing := s.canSign(suits)
+		if !canSing {
+			t.Errorf("got %v, want %v", canSing, !canSing)
+		}
+
+		if suit != state.SUIT2 {
+			t.Errorf("got %v, want %v", suit, state.SUIT2)
+		}
+	})
+	s.singedSuit(state.SUIT2)
+	t.Run("sing 3 must be allowed", func(t *testing.T) {
+		suit, canSing := s.canSign(suits)
+		if !canSing {
+			t.Errorf("got %v, want %v", canSing, !canSing)
+		}
+
+		if suit != state.SUIT3 {
+			t.Errorf("got %v, want %v", suit, state.SUIT3)
+		}
+	})
+
+	s.singedSuit(state.SUIT3)
+
+	t.Run("no sings must be allowed", func(t *testing.T) {
+		_, canSing := s.canSign(suits)
+		if canSing {
+			t.Errorf("got %v, want %v", canSing, !canSing)
+		}
+	})
 }
 
 func TestInitGame(t *testing.T) {

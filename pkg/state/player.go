@@ -71,13 +71,40 @@ func (p *Player) DealCards(cards [6]*Card) {
 // HasSing Checks if the player has singing pair and updates the record.
 func (p *Player) HasSing() ([]string, bool) {
 	var suitSings []string
-	for _, c1 := range p.Cards {
-		for _, c2 := range p.Cards {
-			if c1.IsSingingPair(c2) {
+	has10, has12 := false, false
+	// If it doesn't have a 10 and a 12 card, exit
+	for _, c := range p.Cards {
+		if c != nil && c.Val == 10 {
+			has10 = true
+			break
+		}
+	}
+	if !has10 {
+		return nil, false
+	}
+	for _, c := range p.Cards {
+		if c != nil && c.Val == 12 {
+			has12 = true
+			break
+		}
+	}
+	if !has12 {
+		return nil, false
+	}
+
+	// Check 10 && 12 of the same suit
+
+	for i, c1 := range p.Cards {
+
+		for j := i + 1; j < len(p.Cards); j++ {
+
+			if c1.IsSingingPair(p.Cards[j]) {
+
 				suitSings = append(suitSings, c1.Suit)
 			}
 		}
 	}
+
 	p.SingingSuits = suitSings
 	return suitSings, len(suitSings) > 0
 }

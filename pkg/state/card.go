@@ -53,6 +53,9 @@ func (c *Card) SameSuit(c2 *Card) bool {
 
 // IsSingingPair Checks if th
 func (c *Card) IsSingingPair(c2 *Card) bool {
+	if c2 == nil {
+		return false
+	}
 	if c.SameSuit(c2) {
 		return (c.Val == 10 || c.Val == 12) && (c2.Val == 10 || c2.Val == 12)
 

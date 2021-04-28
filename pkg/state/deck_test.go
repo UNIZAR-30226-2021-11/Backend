@@ -17,7 +17,7 @@ func TestCreateDeck(t *testing.T) {
 			if d.cards[i].Points != getPoints(c) {
 				t.Errorf("got %v, want %v", d.cards[i].Points, getPoints(c))
 			}
-			t.Logf("%v de %s, vale %d", c, suit, d.cards[i].Points)
+			//t.Logf("%v de %s, vale %d", c, suit, d.cards[i].Points)
 			i++
 
 		}
