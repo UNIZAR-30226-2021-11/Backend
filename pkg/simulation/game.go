@@ -5,11 +5,9 @@ import (
 )
 
 const (
-	starting = iota
-	// Turnos de los jugadores
-	cardsDealed
 
-	t1
+	// Turnos de los jugadores
+	t1 = iota
 	t2
 	t3
 	t4
@@ -46,7 +44,7 @@ type Game struct {
 
 	// internal
 
-	sings map[string]bool
+	sings Sings
 }
 
 type GameState struct {
@@ -58,16 +56,18 @@ type GameState struct {
 	currentState int
 	CurrentRound int `json:"current_round"`
 	//CurrentPlayer uint32 `json:"current_player"`
-	Vueltas bool `json:"vueltas"`
 
 	Players *state.Ring `json:"players"`
 
 	TriumphCard *state.Card `json:"triumph_card"`
 
+	Vueltas  bool `json:"vueltas"`
 	Arrastre bool `json:"arrastre"`
 
-	Ended      bool `json:"ended"`
-	WinnerPair int  `json:"winner_pair"` //TODO UPDATE THIS
+	Ended      bool   `json:"ended"`
+	WinnerPair uint32 `json:"winner_pair"`
+
+	CardsPlayedRound []*state.Card `json:"cards_played_round"`
 }
 
 // Sings keeps track of singed suits
@@ -79,6 +79,7 @@ type Sings struct {
 }
 
 func (s *Sings) initialize() {
+	s.winnerPair = 0
 	s.sings = make(map[string]bool)
 	s.sings[state.SUIT1] = false
 	s.sings[state.SUIT2] = false
@@ -130,13 +131,13 @@ func NewGame(p []*state.Player) (g *Game) {
 			Vueltas:      false,
 			Players:      r,
 		},
-		sings: sings,
+		sings: s,
 	}
 	g.deck.Shuffle()
 
 	// Set first player and deal initial cards
 	g.GameState.Players.SetRandomFirstPlayer()
-
+	g.GameState.TriumphCard = g.deck.GetTriumphCard()
 	// Creates the first round
 	g.rounds[0] = NewRound(g.deck.GetTriumph())
 	g.initialCardDealing()
@@ -156,6 +157,7 @@ func (g *Game) initialCardDealing() {
 func (g *Game) newRound() {
 
 	g.currentRound++
+	g.GameState.CurrentRound++
 	g.GameState.Players.SetFirstPlayer(g.winnerLastRound.Player)
 
 	g.rounds[g.currentRound] = NewRound(
@@ -179,21 +181,26 @@ func (g *Game) processCard(c *state.Card) {
 	switch g.GameState.currentState {
 	case t1:
 		g.cardPlayed(c)
+		g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
 		g.GameState.currentState = t2
 	case t2:
 		g.cardPlayed(c)
+		g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
 
 		g.GameState.currentState = t3
 	case t3:
 		g.cardPlayed(c)
+		g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
+
 		g.GameState.currentState = t4
 	case t4:
 		g.cardPlayed(c)
+		g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
 
 		g.checkRoundWinner()
 		g.updatePoints()
 		g.updateSings()
-
+		g.updateChange()
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
 			g.checkWinnerVueltas()
@@ -221,7 +228,7 @@ func (g *Game) checkRoundWinner() {
 	winner := g.rounds[g.currentRound].GetWinner()
 
 	g.winnerLastRound = winner
-	g.GameState.Players.SetFirstPlayer(winner.Player)
+	g.GameState.WinnerPair = winner.Pair
 }
 
 func (g *Game) updatePoints() {
@@ -249,22 +256,34 @@ func (g *Game) updatePoints() {
 func (g *Game) updateSings() {
 
 	wp := g.winnerLastRound.Pair
+	g.pairCanSing = false
 	for _, p := range g.GameState.Players.All {
+		p.CanSing = false
 		if p.Pair == wp {
-			suits, canSing := p.HasSing()
+			suits, _ := p.HasSing()
 			// If the player has a singing pair
-			if canSing {
-				for _, suit := range suits {
-					// Check if if has been singed
-					singed, ok := g.sings[suit]
-					if ok && !singed {
-						p.CanSing = true
-						p.SingSuit = suit
+			suit, allowed := g.sings.canSign(suits)
 
-						// just make one sing at a time
-						return
-					}
-				}
+			if allowed {
+				g.pairCanSing = true
+				p.CanSing = true
+				p.SingSuit = suit
+				return
+			}
+		}
+	}
+}
+
+func (g *Game) updateChange() {
+	g.pairCanSwapCard = false
+	for _, p := range g.GameState.Players.All {
+		// Pair won round
+		if p.Pair == g.winnerLastRound.Pair {
+			seven := p.GetSeven(g.GameState.TriumphCard.Suit)
+			if seven != nil {
+				g.pairCanSwapCard = true
+				p.CanChange = true
+				break
 			}
 		}
 	}
@@ -273,7 +292,7 @@ func (g *Game) updateSings() {
 func (g *Game) checkWinnerVueltas() {
 
 	// TODO comprobar si se ha ganado
-	winner := false
+	winner := g.checkWinner()
 	//
 	if !winner {
 		g.GameState.currentState = singing
@@ -284,23 +303,33 @@ func (g *Game) checkWinnerVueltas() {
 	}
 }
 
+func (g *Game) checkWinnerIdas() {
+
+	winnerIdas := g.checkWinner()
+	if winnerIdas {
+		g.GameState.currentState = ended
+
+		// Comprobar puntos de cada equipo
+		g.ended()
+	} else {
+		//
+		g.GameState.Vueltas = true
+		g.restart()
+	}
+}
+
 func (g *Game) singingState() {
 
-	// TODO Cambiar esta condición
 	if !g.pairCanSing {
 		g.GameState.currentState = swap7
 		g.swapCard()
 
-	} else {
-
-		g.checkWinnerIdas()
 	}
-
 }
 
 func (g *Game) processSing(suit string) {
 	g.GameState.currentState = singing
-	g.sings[suit] = true
+	g.sings.singedSuit(suit)
 
 	if g.winnerLastRound.Pair == TeamA {
 		if suit == g.GameState.TriumphCard.Suit {
@@ -316,19 +345,31 @@ func (g *Game) processSing(suit string) {
 		}
 	}
 	g.updateSings()
+
+	g.singingState()
 }
 
 func (g *Game) changeCard(hasChanged bool) {
 
 	if hasChanged {
+		triumph := g.GameState.TriumphCard.Suit
+		for _, p := range g.GameState.Players.All {
+			if p.Pair == g.winnerLastRound.Pair {
+				seven := p.GetSeven(triumph)
 
+				if seven != nil {
+					last := g.deck.ChangeCard(seven)
+					p.ChangeCard(triumph, last)
+				}
+			}
+		}
 	}
-
+	g.pairCanSwapCard = false
+	g.swapCard()
 }
 
 func (g *Game) swapCard() {
 
-	// TODO comprobar si la pareja ganadora puede cambiar
 	if !g.pairCanSwapCard {
 		if g.currentRound == 9 {
 
@@ -339,24 +380,7 @@ func (g *Game) swapCard() {
 			g.newRound()
 		}
 	} else {
-
-	}
-}
-
-func (g *Game) checkWinnerIdas() {
-
-	// TODO comprobar ganador idas
-
-	winnerIdas := g.checkWinner()
-	if winnerIdas {
-		g.GameState.currentState = ended
-
-		// Comprobar puntos de cada equipo
-		g.ended()
-	} else {
-		//
-		g.GameState.Vueltas = true
-		g.restart()
+		g.GameState.currentState = swap7
 	}
 }
 
@@ -422,12 +446,36 @@ func (g *Game) GetTeamPoints(team int) (points int) {
 }
 
 func (g *Game) ended() {
-
+	g.GameState.Ended = true
 }
 
 // restart puts the game in the initial state, saves the current point
 func (g *Game) restart() {
+	g.sings.initialize()
+	g.deck = state.NewDeck()
 
+	g.GameState.Vueltas = true
+	g.GameState.Arrastre = false
+	g.GameState.CurrentRound = 0
+	g.currentRound = 0
+	g.deck.Shuffle()
+
+	for i := range g.rounds {
+		g.rounds[i] = nil
+	}
+
+	g.pairCanSing = false
+	g.pairCanSwapCard = false
+
+	// Set first player and deal initial cards
+	g.GameState.Players.SetFirstPlayer(g.winnerLastRound.Player)
+	g.GameState.TriumphCard = g.deck.GetTriumphCard()
+
+	// Creates the first round
+	g.rounds[0] = NewRound(g.deck.GetTriumph())
+	g.initialCardDealing()
+
+	g.GameState.currentState = t1
 }
 
 // Deals a card to each player

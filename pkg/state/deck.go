@@ -48,13 +48,18 @@ func (d *Deck) Shuffle() {
 
 // ChangeCard changes the seven card for the triumph
 func (d *Deck) ChangeCard(seven *Card) (c *Card) {
-	d.cards[39], c = c, d.cards[39]
+	d.cards[39], c = seven, d.cards[39]
 	return c
 }
 
 // GetTriumph returns the current triumph of the deck
 func (d *Deck) GetTriumph() string {
 	return d.triumph
+}
+
+// GetTriumph returns the current triumph of the deck
+func (d *Deck) GetTriumphCard() *Card {
+	return d.cards[39]
 }
 
 // PickCard Deals the next card of the deck

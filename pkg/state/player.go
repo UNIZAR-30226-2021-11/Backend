@@ -70,6 +70,7 @@ func (p *Player) DealCards(cards [6]*Card) {
 
 // HasSing Checks if the player has singing pair and updates the record.
 func (p *Player) HasSing() ([]string, bool) {
+	sings := make(map[string]bool)
 	var suitSings []string
 	has10, has12 := false, false
 	// If it doesn't have a 10 and a 12 card, exit
@@ -93,20 +94,23 @@ func (p *Player) HasSing() ([]string, bool) {
 	}
 
 	// Check 10 && 12 of the same suit
-
+	hasSing := false
 	for i, c1 := range p.Cards {
 
 		for j := i + 1; j < len(p.Cards); j++ {
 
 			if c1.IsSingingPair(p.Cards[j]) {
-
-				suitSings = append(suitSings, c1.Suit)
+				sings[c1.Suit] = true
+				hasSing = true
 			}
 		}
 	}
+	for k := range sings {
+		suitSings = append(suitSings, k)
+	}
 
 	p.SingingSuits = suitSings
-	return suitSings, len(suitSings) > 0
+	return suitSings, hasSing
 }
 
 // ChangeCard changes the seven for the top card in the deck.

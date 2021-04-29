@@ -12,6 +12,66 @@ var (
 	USERNAME      = "PEPE"
 )
 
+func TestCantarEnPartida(t *testing.T) {
+	ps := createTestPlayers()
+	g := NewGame(ps)
+	ps = g.GameState.Players.All
+	first := g.GameState.Players.Current()
+	triumph := g.GameState.TriumphCard.Suit
+	first.Cards = [6]*state.Card{
+		state.CreateCard(triumph, 10),
+		state.CreateCard(triumph, 12),
+		state.CreateCard(state.SUIT2, 10),
+		state.CreateCard(state.SUIT2, 12),
+		state.CreateCard(state.SUIT3, 10),
+		state.CreateCard(g.GameState.TriumphCard.Suit, 1),
+	}
+
+	g.HandleCardPlayed(first.Cards[5])
+	g.HandleCardPlayed(g.GameState.Players.Current().Cards[0])
+	g.HandleCardPlayed(g.GameState.Players.Current().Cards[0])
+	g.HandleCardPlayed(g.GameState.Players.Current().Cards[0])
+
+	t.Run("must be singing state", func(t *testing.T) {
+		got := g.GameState.currentState
+		want := singing
+		if got != want {
+			t.Errorf("not correct state")
+		}
+	})
+
+	t.Run("winner player must be able to sing", func(t *testing.T) {
+		if !first.CanSing {
+			pairFirst := first.Pair
+			pairCanSing := false
+			for _, p := range g.GameState.Players.All {
+				if p.Pair == pairFirst && p.CanSing {
+					pairCanSing = true
+				}
+			}
+			if !pairCanSing {
+				t.Errorf("player should be able to sing")
+
+			}
+		}
+	})
+	g.HandleSing(triumph, true)
+
+	t.Run("updated points after sing", func(t *testing.T) {
+		switch first.Pair {
+		case TeamA:
+			if g.GameState.PointsSingA != 40 {
+				t.Error()
+			}
+		case TeamB:
+			if g.GameState.PointsSingB != 40 {
+				t.Error()
+			}
+
+		}
+	})
+}
+
 func TestCantar(t *testing.T) {
 	p := state.CreatePlayer(0, 0, "pepe")
 	p.DealCards([6]*state.Card{
@@ -151,7 +211,7 @@ func TestPlayRound(t *testing.T) {
 		r.playedCard(g.GameState.Players.Current(), c)
 		cardsPlayed = append(cardsPlayed, c)
 	}
-	r.checkWinner()
+	_ = r.checkWinner()
 	t.Run("check same winner", func(t *testing.T) {
 		if !r.winner.Equals(g.rounds[0].winner.Card) {
 			t.Errorf("got %v, want %v", g.rounds[0].winner, r.winner)
@@ -210,7 +270,7 @@ func TestPlay2Round(t *testing.T) {
 		r.playedCard(p, c)
 		cardsPlayed = append(cardsPlayed, c)
 	}
-	r.checkWinner()
+	_ = r.checkWinner()
 	t.Run("check same winner", func(t *testing.T) {
 		if !r.winner.Equals(g.rounds[0].winner.Card) {
 			t.Errorf("got %v, want %v", g.rounds[0].winner, r.winner)
@@ -266,6 +326,11 @@ func checkDistinctCards(t *testing.T, g *Game) bool {
 func TestPlayAllRounds(t *testing.T) {
 	ps := createTestPlayers()
 	g := NewGame(ps)
+	// Mark as singed
+	g.sings.singedSuit(state.SUIT1)
+	g.sings.singedSuit(state.SUIT2)
+	g.sings.singedSuit(state.SUIT3)
+	g.sings.singedSuit(state.SUIT4)
 
 	var cardsPlayed []*state.Card
 
@@ -276,7 +341,9 @@ func TestPlayAllRounds(t *testing.T) {
 			g.HandleCardPlayed(c)
 			cardsPlayed = append(cardsPlayed, c)
 		}
-
+		if g.pairCanSwapCard {
+			g.HandleChangedCard(false)
+		}
 		t.Run("dealed distinct cards", func(t *testing.T) {
 			checkDistinctCards(t, g)
 		})
@@ -314,7 +381,7 @@ func TestPlayAllRounds(t *testing.T) {
 	})
 
 	t.Run("correct total points", func(t *testing.T) {
-		if sumPoints(g.rounds) != 120 {
+		if g.GameState.Ended && sumPoints(g.rounds) != 120 {
 			t.Errorf("got %v, want %v", sumPoints(g.rounds), 120)
 		}
 
@@ -333,19 +400,15 @@ func TestPlayAllRounds(t *testing.T) {
 			if !g.GameState.Vueltas {
 				t.Errorf("rematch want %v, got %v", true, g.GameState.Vueltas)
 			}
+
+			if g.currentRound != 0 {
+				t.Errorf("got %v, want %v", g.currentRound, 0)
+			}
+
 		} else {
 			t.Logf("doesn't need rematch")
 		}
 	})
-}
-
-func hasBeenPlayed(played []*state.Card, c *state.Card) bool {
-	for _, c2 := range played {
-		if c2.Equals(c) {
-			return true
-		}
-	}
-	return false
 }
 
 func TestInitialCardDealing(t *testing.T) {
