@@ -14,13 +14,12 @@ const (
 	NUM_CLIENT = 4
 )
 
-
 func main() {
 
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
-		c := Client{Id: uint32(40+i), PairId: uint32((i%2)+20)}
+		c := Client{Id: uint32(40 + i), PairId: uint32((i % 2) + 20)}
 		c.Start()
 		clients = append(clients, c)
 	}
@@ -33,13 +32,12 @@ func main() {
 
 	time.Sleep(time.Second * 100)
 
-
 }
 
 type Client struct {
 	*websocket.Conn
-	Id uint32			`json:"player_id,omitempty"`
-	PairId uint32	    `json:"pair_id,omitempty"`
+	Id        uint32 `json:"player_id,omitempty"`
+	PairId    uint32 `json:"pair_id,omitempty"`
 	GameState *simulation.GameState
 }
 
@@ -72,7 +70,7 @@ func (c *Client) JoinGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
-		PairID:	   c.PairId,
+		PairID:    c.PairId,
 		EventType: 1,
 	}
 	_ = c.WriteJSON(event)
@@ -82,7 +80,7 @@ func (c *Client) CreateGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
-		PairID:	   c.PairId,
+		PairID:    c.PairId,
 		EventType: 0,
 	}
 	_ = c.WriteJSON(event)
@@ -107,6 +105,7 @@ func (c *Client) LeaveGame() {
 	event := events.Event{
 		GameID:    1,
 		PlayerID:  c.Id,
+		EventType: 2,
 	}
 	_ = c.WriteJSON(event)
 }

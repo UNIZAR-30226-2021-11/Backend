@@ -435,6 +435,11 @@ func (g *Game) GetPlayersID() []uint32 {
 	return g.GameState.Players.GetPlayersIds()
 }
 
+// GetOpponentsID returns the ids of the other pair players
+func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
+	return []uint32{1, 2}
+}
+
 // GetTeamPoints returns points for a team, even returns Team A, odd Team B
 func (g *Game) GetTeamPoints(team int) (points int) {
 	if team%2 == 0 {

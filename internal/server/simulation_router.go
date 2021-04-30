@@ -10,13 +10,11 @@ import (
 )
 
 type SimulationRouter struct {
-
-	clients          		map[uint32]*Client
-	EventsDispatcher 		*events.EventDispatcher
-	userNameRegistry 		*data.UserNamesRegistry
-	upgrader         		*websocket.Upgrader
-	simulationRepository	*data.SimulationRepository
-
+	clients              map[uint32]*Client
+	EventsDispatcher     *events.EventDispatcher
+	userNameRegistry     *data.UserNamesRegistry
+	upgrader             *websocket.Upgrader
+	simulationRepository *data.SimulationRepository
 }
 
 func NewSimulationRouter() *SimulationRouter {
@@ -38,6 +36,8 @@ func NewSimulationRouter() *SimulationRouter {
 
 	eventDispatcher.RegisterStateChangedListener(sr)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
+	eventDispatcher.RegisterGamePauseListener(sr)
+	eventDispatcher.RegisterGamePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr)
@@ -50,7 +50,7 @@ func NewSimulationRouter() *SimulationRouter {
 	return sr
 }
 
-func (sr *SimulationRouter) Handler (w http.ResponseWriter, r *http.Request) {
+func (sr *SimulationRouter) Handler(w http.ResponseWriter, r *http.Request) {
 	conn, err := sr.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -74,15 +74,18 @@ func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
 	}
 }
 
-func (sr *SimulationRouter) HandleStateChanged (stateChangedEvent *events.StateChanged) {
+func (sr *SimulationRouter) HandleStateChanged(stateChangedEvent *events.StateChanged) {
 	clientsID := stateChangedEvent.ClientsID
 	for _, c := range clientsID {
-		sr.SendToClient(c, &stateChangedEvent.Game)
+		sr.SendToClient(c, &stateChangedEvent.GameData)
 	}
+}
+
+func (sr *SimulationRouter) HandleGamePause(gamePauseEvent *events.GamePause) {
 
 }
 
-func (sr *SimulationRouter) HandleUserLeft (userLeftEvent *events.UserLeft) {
+func (sr *SimulationRouter) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	clientID := userLeftEvent.PlayerID
 	client, ok := sr.clients[clientID]
 	if ok {
@@ -92,6 +95,4 @@ func (sr *SimulationRouter) HandleUserLeft (userLeftEvent *events.UserLeft) {
 		log.Printf("Client %d not found\n", clientID)
 		return
 	}
-
-
 }
