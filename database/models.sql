@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS games (
     id serial NOT NULL,
     name VARCHAR(150) NOT NULL UNIQUE,
     public BOOLEAN NOT NULL,
+    tournament BOOLEAN NOT NULL DEFAULT false,
     creation_date timestamp DEFAULT now(),
     end_date timestamp,
     CONSTRAINT pk_games PRIMARY KEY(id)
