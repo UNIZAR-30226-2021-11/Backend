@@ -60,7 +60,7 @@ func simStates(w http.ResponseWriter, r *http.Request) {
 				err = c.WriteJSON(testGames.games[testGames.count])
 				if err != nil {
 					log.Println("write:", err)
-					break
+					return
 				}
 				log.Printf("Event %v", evt)
 				testGames.count = (testGames.count + 1) % STATES
@@ -69,7 +69,7 @@ func simStates(w http.ResponseWriter, r *http.Request) {
 				err = c.WriteJSON(testGames.games[testGames.count])
 				if err != nil {
 					log.Println("write:", err)
-					break
+					return
 				}
 				log.Printf("Tick, sent state %v", testGames.count)
 				testGames.count = (testGames.count + 1) % STATES
