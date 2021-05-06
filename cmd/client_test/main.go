@@ -15,7 +15,6 @@ const (
 )
 
 func main() {
-
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
@@ -32,6 +31,7 @@ func main() {
 
 	time.Sleep(time.Second * 100)
 
+	//clients[3].PauseGame(1)
 }
 
 type Client struct {
@@ -99,6 +99,14 @@ func (c *Client) PlayCard() {
 			_ = c.WriteJSON(event)
 		}
 	}
+}
+
+func (c *Client) PauseGame(game uint32) {
+	event := events.Event{
+		GameID:    game,
+		PlayerID:  c.Id,
+	}
+	_ = c.WriteJSON(event)
 }
 
 func (c *Client) LeaveGame() {
