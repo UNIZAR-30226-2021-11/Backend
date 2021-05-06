@@ -21,8 +21,8 @@ type SimulationRepository struct {
 }
 
 type GameData struct {
-	status string               `json:"status,omitempty"`
-	game   simulation.GameState `json:"game_state,omitempty"`
+	Status string               `json:"status,omitempty"`
+	Game   simulation.GameState `json:"game_state,omitempty"`
 }
 
 func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *SimulationRepository {
@@ -82,6 +82,8 @@ func (sr *SimulationRepository) startNewGame(playersChan chan *state.Player, gam
 	sr.games[gameId] = game
 	delete(sr.futureGames, gameId)
 
+	log.Printf("Game %v: Triumph is %v", gameId, game.GameState.TriumphCard.Suit)
+
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
@@ -109,6 +111,8 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 
 	game.HandleCardPlayed(cardPlayedEvent.Card)
 
+	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
+
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
@@ -120,6 +124,9 @@ func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardC
 	}
 
 	game.HandleChangedCard(cardChangedEvent.Changed)
+
+	log.Printf("Client %v Game %v: Changed card: %v", cardChangedEvent.PlayerID,
+		cardChangedEvent.GameID, cardChangedEvent.Changed)
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
@@ -133,14 +140,17 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 
 	game.HandleSing(singEvent.Suit, singEvent.HasSinged)
 
+	log.Printf("Client %v Game %v: Changed card: %v %v", singEvent.PlayerID,
+		singEvent.GameID, singEvent.Suit, singEvent.HasSinged)
+
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) sendNewState(game simulation.GameState,
 	status string, clients []uint32) {
 	gameData := &GameData{
-		status: status,
-		game:   game,
+		Status: status,
+		Game:   game,
 	}
 
 	event := &events.StateChanged{

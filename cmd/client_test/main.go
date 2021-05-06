@@ -1,8 +1,8 @@
 package main
 
 import (
+	"Backend/internal/data"
 	"Backend/pkg/events"
-	"Backend/pkg/simulation"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
@@ -36,9 +36,9 @@ func main() {
 
 type Client struct {
 	*websocket.Conn
-	Id        uint32 `json:"player_id,omitempty"`
-	PairId    uint32 `json:"pair_id,omitempty"`
-	GameState *simulation.GameState
+	Id       uint32 `json:"player_id,omitempty"`
+	PairId   uint32 `json:"pair_id,omitempty"`
+	GameData *data.GameData
 }
 
 func (c *Client) Start() {
@@ -55,12 +55,12 @@ func (c *Client) Start() {
 			}
 		}()
 		for {
-			err := c.ReadJSON(&c.GameState)
+			err := c.ReadJSON(&c.GameData)
 			if err != nil {
 				log.Print("Error reading JSON")
 			}
 			c.PlayCard()
-			bytes, err := json.Marshal(c.GameState)
+			bytes, err := json.Marshal(c.GameData)
 			log.Printf("Client %v:Message received: %s", c.Id, bytes)
 		}
 	}()
@@ -87,17 +87,46 @@ func (c *Client) CreateGame(game uint32) {
 }
 
 func (c *Client) PlayCard() {
-	players := c.GameState.Players.All
+	players := c.GameData.Game.Players.All
+
+guarrada:
 	for _, player := range players {
-		if player.CanPlay {
-			event := events.Event{
-				GameID:    1,
-				PlayerID:  c.Id,
-				EventType: 3,
-				Card:      player.Cards[0],
+		if player.Id == c.Id {
+			if player.CanPlay {
+				for _, card := range player.Cards {
+					if card != nil && card.Playable {
+						event := events.Event{
+							GameID:    1,
+							PlayerID:  c.Id,
+							EventType: 3,
+							Card:      card,
+						}
+						_ = c.WriteJSON(event)
+						break guarrada
+					}
+				}
+			} else if player.CanSing {
+				event := events.Event{
+					GameID:    1,
+					PlayerID:  c.Id,
+					EventType: 5,
+					Suit: player.SingSuit,
+					HasSinged: false,
+				}
+				_ = c.WriteJSON(event)
+				break guarrada
+			} else if player.CanChange {
+				event := events.Event{
+					GameID:    1,
+					PlayerID:  c.Id,
+					EventType: 4,
+					Changed: false,
+				}
+				_ = c.WriteJSON(event)
+				break guarrada
 			}
-			_ = c.WriteJSON(event)
 		}
+
 	}
 }
 
