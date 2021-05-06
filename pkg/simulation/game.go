@@ -44,7 +44,8 @@ type Game struct {
 
 	// internal
 
-	sings Sings
+	sings              Sings
+	cardHasBeenChanged bool
 }
 
 type GameState struct {
@@ -203,7 +204,11 @@ func (g *Game) processCard(c *state.Card) {
 		g.checkRoundWinner()
 		g.updatePoints()
 		g.updateSings()
-		g.updateChange()
+
+		if !g.cardHasBeenChanged {
+			g.updateChange()
+		}
+
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
 			g.checkWinnerVueltas()
@@ -358,6 +363,7 @@ func (g *Game) processSing(suit string) {
 func (g *Game) changeCard(hasChanged bool) {
 
 	if hasChanged {
+		g.cardHasBeenChanged = true
 		triumph := g.GameState.TriumphCard.Suit
 		for _, p := range g.GameState.Players.All {
 			if p.Pair == g.winnerLastRound.Pair {
@@ -369,6 +375,10 @@ func (g *Game) changeCard(hasChanged bool) {
 				}
 			}
 		}
+	}
+	for _, p := range g.GameState.Players.All {
+		// Pair won round
+		p.CanChange = false
 	}
 	g.pairCanSwapCard = false
 	g.swapCard()
