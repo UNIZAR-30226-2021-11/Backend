@@ -214,10 +214,13 @@ func (g *Game) processCard(c *state.Card) {
 // Process a card played, advances the player
 func (g *Game) cardPlayed(c *state.Card) {
 	current := g.GameState.Players.Current()
-
-	g.rounds[g.currentRound].playedCard(current, c)
+	r := g.rounds[g.currentRound]
+	r.playedCard(current, c)
 	current.PlayCard(c)
 
+	for _, player := range g.GameState.Players.All {
+		r.CanPlayCards(g.GameState.Arrastre, player.GetCards())
+	}
 	g.GameState.Players.Next()
 
 }
