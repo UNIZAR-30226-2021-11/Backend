@@ -142,6 +142,9 @@ func NewGame(p []*state.Player) (g *Game) {
 	g.rounds[0] = NewRound(g.deck.GetTriumph())
 	g.initialCardDealing()
 
+	for _, player := range g.GameState.Players.All {
+		g.rounds[0].CanPlayCards(g.GameState.Arrastre, player.GetCards())
+	}
 	g.GameState.currentState = t1
 	return g
 }
