@@ -148,6 +148,14 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 		}
 		c.sr.EventsDispatcher.FireGamePause(e)
 
+	case events.VOTE_PAUSE:
+		e := &events.VotePause{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Vote:     event.Vote,
+		}
+		c.sr.EventsDispatcher.FireVotePause(e)
+
 	case events.USER_JOINED:
 		e := &events.UserJoined{
 			PlayerID: event.PlayerID,

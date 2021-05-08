@@ -22,6 +22,7 @@ func main() {
 		c.Start()
 		clients = append(clients, c)
 	}
+	time.Sleep(time.Second * 1)
 
 	clients[0].CreateGame(1)
 
@@ -29,9 +30,20 @@ func main() {
 		clients[i].JoinGame(1)
 	}
 
-	time.Sleep(time.Second * 100)
+	go func() {
+		time.Sleep(time.Second * 2)
 
-	//clients[3].PauseGame(1)
+		clients[3].PauseGame(1)
+
+		time.Sleep(time.Second * 2)
+
+		clients[0].VotePause(1)
+	}()
+
+	for {
+		//Guarrisimo
+		time.Sleep(time.Second * 5)
+	}
 }
 
 type Client struct {
@@ -59,7 +71,7 @@ func (c *Client) Start() {
 			if err != nil {
 				log.Print("Error reading JSON")
 			}
-			c.PlayCard()
+			//c.PlayCard()
 			bytes, err := json.Marshal(c.GameData)
 			log.Printf("Client %v:Message received: %s", c.Id, bytes)
 		}
@@ -110,7 +122,7 @@ guarrada:
 					GameID:    1,
 					PlayerID:  c.Id,
 					EventType: 5,
-					Suit: player.SingSuit,
+					Suit:      player.SingSuit,
 					HasSinged: false,
 				}
 				_ = c.WriteJSON(event)
@@ -120,7 +132,7 @@ guarrada:
 					GameID:    1,
 					PlayerID:  c.Id,
 					EventType: 4,
-					Changed: false,
+					Changed:   false,
 				}
 				_ = c.WriteJSON(event)
 				break guarrada
@@ -134,6 +146,17 @@ func (c *Client) PauseGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
+		EventType: 6,
+	}
+	_ = c.WriteJSON(event)
+}
+
+func (c *Client) VotePause(game uint32) {
+	event := events.Event{
+		GameID:    game,
+		PlayerID:  c.Id,
+		Vote:      true,
+		EventType: 7,
 	}
 	_ = c.WriteJSON(event)
 }

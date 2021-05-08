@@ -10,6 +10,7 @@ const (
 	CARD_CHANGED = 4
 	SING         = 5
 	GAME_PAUSE   = 6
+	VOTE_PAUSE   = 7
 )
 
 // Event is a generic event communication
@@ -23,4 +24,5 @@ type Event struct {
 	Changed   bool        `json:"changed,omitempty"`
 	Suit      string      `json:"suit,omitempty"`
 	HasSinged bool        `json:"has_singed,omitempty"`
+	Vote      bool        `json:"vote,omitempty"`
 }

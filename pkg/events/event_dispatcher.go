@@ -30,6 +30,10 @@ type GamePauseListener interface {
 	HandleGamePause(*GamePause)
 }
 
+type VotePauseListener interface {
+	HandleVotePause(*VotePause)
+}
+
 type UserJoinedListener interface {
 	HandleUserJoined(*UserJoined)
 }
@@ -96,6 +100,17 @@ type gamePauseHandler struct {
 func (handler *gamePauseHandler) handle() {
 	for _, listener := range handler.eventListeners {
 		listener.HandleGamePause(handler.event)
+	}
+}
+
+type votePauseHandler struct {
+	event          *VotePause
+	eventListeners []VotePauseListener
+}
+
+func (handler *votePauseHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleVotePause(handler.event)
 	}
 }
 
@@ -171,6 +186,8 @@ type EventDispatcher struct {
 
 	gamePauseListeners []GamePauseListener
 
+	votePauseListeners []VotePauseListener
+
 	userJoinedListeners []UserJoinedListener
 
 	userLeftListeners []UserLeftListener
@@ -199,6 +216,8 @@ func NewEventDispatcher() *EventDispatcher {
 		gameCreateListeners: []GameCreateListener{},
 
 		gamePauseListeners: []GamePauseListener{},
+
+		votePauseListeners: []VotePauseListener{},
 
 		userJoinedListeners: []UserJoinedListener{},
 
@@ -296,6 +315,23 @@ func (dispatcher *EventDispatcher) FireGamePause(event *GamePause) {
 	handler := &gamePauseHandler{
 		event:          event,
 		eventListeners: dispatcher.gamePauseListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// VotePause
+
+func (dispatcher *EventDispatcher) RegisterVotePauseListener(listener VotePauseListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.votePauseListeners = append(dispatcher.votePauseListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireVotePause(event *VotePause) {
+	handler := &votePauseHandler{
+		event:          event,
+		eventListeners: dispatcher.votePauseListeners,
 	}
 
 	dispatcher.priority2EventsQueue <- handler
