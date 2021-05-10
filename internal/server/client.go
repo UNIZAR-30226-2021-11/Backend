@@ -161,8 +161,17 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 			PlayerID: event.PlayerID,
 			PairID:   event.PairID,
 			GameID:   event.GameID,
+			UserName: event.UserName,
 		}
 		c.sr.EventsDispatcher.FireGameCreate(e)
+
+	case events.SINGLE_GAME_CREATE:
+		e := &events.SingleGameCreate{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			UserName: event.UserName,
+		}
+		c.sr.EventsDispatcher.FireSingleGameCreate(e)
 
 	case events.GAME_PAUSE:
 		e := &events.GamePause{
