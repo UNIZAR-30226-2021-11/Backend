@@ -36,8 +36,8 @@ func NewSimulationRouter() *SimulationRouter {
 
 	eventDispatcher.RegisterStateChangedListener(sr)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
-	eventDispatcher.RegisterGamePauseListener(sr)
 	eventDispatcher.RegisterGamePauseListener(sr.simulationRepository)
+	eventDispatcher.RegisterVotePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr)
@@ -81,18 +81,13 @@ func (sr *SimulationRouter) HandleStateChanged(stateChangedEvent *events.StateCh
 	}
 }
 
-func (sr *SimulationRouter) HandleGamePause(gamePauseEvent *events.GamePause) {
-
-}
-
 func (sr *SimulationRouter) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	clientID := userLeftEvent.PlayerID
 	client, ok := sr.clients[clientID]
-	if ok {
-		client.Done()
-		delete(sr.clients, clientID)
-	} else {
+	if !ok {
 		log.Printf("Client %d not found\n", clientID)
 		return
 	}
+	client.Done()
+	delete(sr.clients, clientID)
 }

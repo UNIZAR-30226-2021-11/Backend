@@ -24,6 +24,7 @@ var supportedEvents = []EventType{
 	NewEventType("StateChanged", 2),
 	NewEventType("GameCreate", 2),
 	NewEventType("GamePause", 2),
+	NewEventType("VotePause", 2),
 	NewEventType("UserJoined", 2),
 	NewEventType("UserLeft", 2),
 	NewEventType("CardPlayed", 2),

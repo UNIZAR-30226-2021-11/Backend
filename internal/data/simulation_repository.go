@@ -15,7 +15,7 @@ const (
 
 type SimulationRepository struct {
 	eventDispatcher *events.EventDispatcher
-	futureGames     map[uint32]chan *state.Player
+	futureGames     map[uint32][]*state.Player
 	pausedGames     map[uint32]*simulation.Game
 	games           map[uint32]*simulation.Game
 }
@@ -28,7 +28,7 @@ type GameData struct {
 func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *SimulationRepository {
 	return &SimulationRepository{
 		eventDispatcher: eventDispatcher,
-		futureGames:     make(map[uint32]chan *state.Player),
+		futureGames:     make(map[uint32][]*state.Player),
 		games:           make(map[uint32]*simulation.Game),
 		pausedGames:     make(map[uint32]*simulation.Game),
 	}
@@ -38,7 +38,8 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 	log.Printf("User %d trying to create game %d\n", gameCreateEvent.PlayerID, gameCreateEvent.GameID)
 
 	gameId := gameCreateEvent.GameID
-	sr.futureGames[gameId] = make(chan *state.Player, 4)
+	var players []*state.Player
+	sr.futureGames[gameId] = players
 
 	sr.eventDispatcher.FireUserJoined(&events.UserJoined{
 		PlayerID: gameCreateEvent.PlayerID,
@@ -53,34 +54,35 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 		Id:   userJoinedEvent.PlayerID,
 		Pair: userJoinedEvent.PairID,
 	}
+	players, ok := sr.futureGames[gameId]
+	if !ok {
+		log.Printf("Game %d not found\n", gameId)
+		return
+	}
 
-	sr.futureGames[gameId] <- player
-	players := sr.futureGames[gameId]
+	players = append(players, player)
+	sr.futureGames[gameId] = players
 
 	if len(players) == 4 {
 		sr.startNewGame(players, gameId)
 	}
 }
 
-func (sr *SimulationRepository) startNewGame(playersChan chan *state.Player, gameId uint32) {
-	var playersArray []*state.Player
-	player := <-playersChan
-	firstPair := player.Pair
-	player.Pair = 1
-	playersArray = append(playersArray, player)
-	for i := 0; i < 3; i++ {
-		player := <-playersChan
+func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
+	firstPair := players[0].Pair
+
+	for _, player := range players {
 		if player.Pair != firstPair {
 			player.Pair = 2
 		} else {
 			player.Pair = 1
 		}
-		playersArray = append(playersArray, player)
 	}
-	game := simulation.NewGame(playersArray)
+
+	game := simulation.NewGame(players)
 
 	sr.games[gameId] = game
-	delete(sr.futureGames, gameId)
+	//delete(sr.futureGames, gameId)
 
 	log.Printf("Game %v: Triumph is %v", gameId, game.GameState.TriumphCard.Suit)
 
@@ -98,8 +100,21 @@ func (sr *SimulationRepository) HandleGamePause(gamePauseEvent *events.GamePause
 	sr.sendNewState(game.GameState, STATUS_VOTE, opponents)
 }
 
+func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause) {
+	game, ok := sr.games[votePauseEvent.GameID]
+	if !ok {
+		log.Printf("Game %d not found\n", votePauseEvent.GameID)
+		return
+	}
+
+	if votePauseEvent.Vote {
+		sr.sendNewState(game.GameState, STATUS_PAUSED, game.GetPlayersID())
+	}
+}
+
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	//TODO: change user by IA
+
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
