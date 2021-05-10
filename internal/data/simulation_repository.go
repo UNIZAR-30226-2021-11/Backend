@@ -64,12 +64,28 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 	sr.futureGames[gameId] = players
 
 	if len(players) == 4 {
+		sr.startGame(players, gameId)
+	}
+}
+
+// startGame Starts a new game or restarts an existing game.
+func (sr *SimulationRepository) startGame(players []*state.Player, gameId uint32) {
+	pausedGame, isPaused := sr.pausedGames[gameId]
+
+	if isPaused {
+		sr.restartGame(pausedGame, gameId)
+	} else {
 		sr.startNewGame(players, gameId)
 	}
 }
 
-func (sr *SimulationRepository) restartGame(game *simulation.Game) {
+func (sr *SimulationRepository) restartGame(game *simulation.Game, gameId uint32) {
+	sr.games[gameId] = game
 
+	delete(sr.pausedGames, gameId)
+	delete(sr.futureGames, gameId)
+
+	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
@@ -112,12 +128,17 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 		return
 	}
 
-	_, isPaused := sr.pausedGames[gameId]
-
-	if votePauseEvent.Vote && !isPaused {
+	if votePauseEvent.Vote {
+		// Let players know game is paused
 		sr.sendNewState(game.GameState, STATUS_PAUSED, game.GetPlayersID())
+
+		// Save the current game state
 		sr.pausedGames[gameId] = game
 		delete(sr.games, gameId)
+
+		// For rejoining the game
+		var players []*state.Player
+		sr.futureGames[gameId] = players
 	}
 }
 

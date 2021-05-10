@@ -26,6 +26,8 @@ func main() {
 
 	clients[0].CreateGame(1)
 
+	time.Sleep(time.Second * 1)
+
 	for i := 1; i < NUM_CLIENT; i++ {
 		clients[i].JoinGame(1)
 	}
@@ -37,6 +39,13 @@ func main() {
 	time.Sleep(time.Second * 2)
 
 	clients[0].VotePause(1)
+
+	// Game is paused
+	time.Sleep(time.Second * 2)
+	for _, c := range clients {
+		c.JoinGame(1)
+		time.Sleep(time.Second * 1)
+	}
 
 	for {
 		//Guarrisimo
