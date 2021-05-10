@@ -60,10 +60,11 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 		return
 	}
 
-	newPlayers := append(players, player)
+	players = append(players, player)
+	sr.futureGames[gameId] = players
 
-	if len(newPlayers) == 4 {
-		sr.startNewGame(newPlayers, gameId)
+	if len(players) == 4 {
+		sr.startNewGame(players, gameId)
 	}
 }
 
@@ -109,7 +110,6 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 	if votePauseEvent.Vote {
 		sr.sendNewState(game.GameState, STATUS_PAUSED, game.GetPlayersID())
 	}
-
 }
 
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {

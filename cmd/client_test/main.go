@@ -30,15 +30,13 @@ func main() {
 		clients[i].JoinGame(1)
 	}
 
-	go func() {
-		time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 2)
 
-		clients[3].PauseGame(1)
+	clients[3].PauseGame(1)
 
-		time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 2)
 
-		clients[0].VotePause(1)
-	}()
+	clients[0].VotePause(1)
 
 	for {
 		//Guarrisimo
