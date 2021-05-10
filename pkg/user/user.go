@@ -10,6 +10,7 @@ import (
 type User struct {
 	ID           uint      `json:"id,omitempty"`
 	Username     string    `json:"username,omitempty"`
+	PlayerId     uint      `json:"player_id,omitempty"`
 	Email        string    `json:"email,omitempty"`
 	Location     string    `json:"location,omitempty"`
 	GamesWon     int       `json:"games_won"`
