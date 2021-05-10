@@ -4,9 +4,21 @@ import (
 	"Backend/pkg/events"
 	"github.com/gorilla/websocket"
 	"log"
+	"time"
 )
 
-const channelBufSize = 100
+const (
+	channelBufSize = 100
+
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 6 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+)
 
 // Client struct holds client-specific variables.
 type Client struct {
@@ -65,7 +77,9 @@ func (c *Client) Listen() {
 
 // Listen write request via chanel
 func (c *Client) listenWrite() {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		ticker.Stop()
 		err := c.ws.Close()
 		if err != nil {
 			log.Println("Error:", err.Error())
@@ -88,6 +102,12 @@ func (c *Client) listenWrite() {
 				//c.sr.monitor.AddSendTime(elapsed)
 			}
 
+		case <-ticker.C:
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+
 		case <-c.doneCh:
 			c.doneCh <- true
 			return
@@ -102,6 +122,9 @@ func (c *Client) listenRead() {
 			log.Println("Error:", err.Error())
 		}
 	}()
+
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	log.Println("Listening read from client")
 	for {

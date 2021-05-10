@@ -34,6 +34,10 @@ func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *Simulatio
 	}
 }
 
+func (sr *SimulationRepository) HandleSingleGameCreate(singleGameCreateEvent *events.SingleGameCreate) {
+	//TODO
+}
+
 func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCreate) {
 	log.Printf("User %d trying to create game %d\n", gameCreateEvent.PlayerID, gameCreateEvent.GameID)
 
