@@ -12,8 +12,8 @@ type User struct {
 	Username     string    `json:"username,omitempty"`
 	Email        string    `json:"email,omitempty"`
 	Location     string    `json:"location,omitempty"`
-	GamesWon     int       `json:"games_won,omitempty"`
-	GamesLost    int       `json:"games_lost,omitempty"`
+	GamesWon     int       `json:"games_won"`
+	GamesLost    int       `json:"games_lost"`
 	Password     string    `json:"password,omitempty"`
 	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"created_at,omitempty"`
