@@ -68,6 +68,10 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 	}
 }
 
+func (sr *SimulationRepository) restartGame(game *simulation.Game) {
+
+}
+
 func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
 	firstPair := players[0].Pair
 
@@ -82,7 +86,7 @@ func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uin
 	game := simulation.NewGame(players)
 
 	sr.games[gameId] = game
-	//delete(sr.futureGames, gameId)
+	delete(sr.futureGames, gameId)
 
 	log.Printf("Game %v: Triumph is %v", gameId, game.GameState.TriumphCard.Suit)
 
@@ -101,14 +105,19 @@ func (sr *SimulationRepository) HandleGamePause(gamePauseEvent *events.GamePause
 }
 
 func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause) {
-	game, ok := sr.games[votePauseEvent.GameID]
+	gameId := votePauseEvent.GameID
+	game, ok := sr.games[gameId]
 	if !ok {
-		log.Printf("Game %d not found\n", votePauseEvent.GameID)
+		log.Printf("Game %d not found\n", gameId)
 		return
 	}
 
-	if votePauseEvent.Vote {
+	_, isPaused := sr.pausedGames[gameId]
+
+	if votePauseEvent.Vote && !isPaused {
 		sr.sendNewState(game.GameState, STATUS_PAUSED, game.GetPlayersID())
+		sr.pausedGames[gameId] = game
+		delete(sr.games, gameId)
 	}
 }
 
