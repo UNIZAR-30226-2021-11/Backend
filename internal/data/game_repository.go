@@ -26,7 +26,7 @@ func (gr *GameRepository) GetOne(ctx context.Context, gameID uint) (game.Game, e
 	WHERE g.id = $1;
 	`
 	qUsers := `
-	SELECT u.username
+	SELECT u.username, pl.id, u.id
 	FROM
 		pairs pa
 			INNER JOIN players pl
@@ -58,7 +58,7 @@ func (gr *GameRepository) GetOne(ctx context.Context, gameID uint) (game.Game, e
 
 		for rows.Next() {
 			var u user.User
-			rows.Scan(&u.Username)
+			rows.Scan(&u.Username, &u.PlayerId, &u.ID)
 			p.Users = append(p.Users, u)
 		}
 
