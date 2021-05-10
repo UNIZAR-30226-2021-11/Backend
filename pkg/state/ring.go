@@ -19,7 +19,6 @@ type ringNode struct {
 
 // NewPlayerRing creates a new 4 Player ring
 func NewPlayerRing(players []*Player) *Ring {
-	// TODO TENER EN CUENTA LA PAREJA
 	var r Ring
 	var first ringNode
 	for i, player := range players {

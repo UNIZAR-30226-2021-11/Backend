@@ -33,8 +33,8 @@ func NewRound(triumph string) *round {
 // GetWinner returns the round winner
 func (r *round) GetWinner() (p *cardPlayed) {
 	if r.pos != 3 {
-		// TODO QUITAR
-		panic(1)
+		return nil
+		//panic(1)
 	}
 	if err := r.checkWinner(); err != nil {
 		panic(1)

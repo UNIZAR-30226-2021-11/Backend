@@ -1,6 +1,7 @@
 package data
 
 import (
+	"Backend/pkg/ai"
 	"Backend/pkg/events"
 	"Backend/pkg/simulation"
 	"Backend/pkg/state"
@@ -36,6 +37,30 @@ func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *Simulatio
 
 func (sr *SimulationRepository) HandleSingleGameCreate(singleGameCreateEvent *events.SingleGameCreate) {
 	//TODO
+	log.Printf("User %d trying to create single game %d\n",
+		singleGameCreateEvent.PlayerID, singleGameCreateEvent.GameID)
+
+	gameId := singleGameCreateEvent.GameID
+	var players []*state.Player
+	sr.futureGames[gameId] = players
+
+	var ais []*ai.Client
+	for i := 1; i < 3; i++ {
+		aiClient := ai.Create(uint32(i), uint32(i%2)+1, gameId)
+		ais = append(ais, aiClient)
+	}
+
+	// Add the single user
+	sr.eventDispatcher.FireUserJoined(&events.UserJoined{
+		PlayerID: singleGameCreateEvent.PlayerID,
+		PairID:   uint32(1),
+		GameID:   singleGameCreateEvent.GameID,
+		UserName: singleGameCreateEvent.UserName,
+	})
+	for _, c := range ais {
+		c.Start()
+		log.Printf("ai client: %d started", c.Id)
+	}
 }
 
 func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCreate) {
@@ -52,6 +77,7 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 		UserName: gameCreateEvent.UserName,
 	})
 }
+
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
@@ -111,6 +137,12 @@ func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uin
 	log.Printf("Game %v: Triumph is %v", gameId, game.GameState.TriumphCard.Suit)
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+}
+
+func (sr *SimulationRepository) startSingleGame(player *state.Player, gameId uint32) {
+
+	//game := simulation.NewGame(players)
+
 }
 
 func (sr *SimulationRepository) HandleGamePause(gamePauseEvent *events.GamePause) {

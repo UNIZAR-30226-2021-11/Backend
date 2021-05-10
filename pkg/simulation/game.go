@@ -302,7 +302,6 @@ func (g *Game) updateChange() {
 
 func (g *Game) checkWinnerVueltas() {
 
-	// TODO comprobar si se ha ganado
 	winner := g.checkWinner()
 	//
 	if !winner {
