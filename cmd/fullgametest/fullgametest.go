@@ -5,16 +5,9 @@ import (
 	"Backend/pkg/simulation"
 	"Backend/pkg/state"
 	"flag"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-)
-
-var (
-	IdNewPlayer uint32
-	PAIR        uint32
-	USERNAME    = "PEPE"
 )
 
 var upgrader = websocket.Upgrader{} // use default options
@@ -51,18 +44,18 @@ func mockUpGame(w http.ResponseWriter, r *http.Request) {
 	player := state.CreatePlayer(event.PlayerID, event.GameID, event.UserName)
 	player.Pair = 1
 	var ps []*state.Player
-	var controlledAI []chan events.Event
+	//var controlledAI []chan events.Event
 	// Creamos las ia
-	enemy1, e1chan := createAI(2)
-	go controlAI(enemy1, e1chan, nil)
-	ally1, a1chan := createAI(1)
-	go controlAI(ally1, a1chan, nil)
-	enemy2, e2chan := createAI(2)
-	go controlAI(enemy2, e2chan, nil)
+	enemy1, _, _ := createAI(2)
+	go enemy1.controlAI()
+	ally1, _, _ := createAI(1)
+	go ally1.controlAI()
+	enemy2, _, _ := createAI(2)
+	go enemy2.controlAI()
 
-	ps = append(ps, player, enemy1, ally1, enemy2)
+	ps = append(ps, player, enemy1.Player, ally1.Player, enemy2.Player)
 
-	controlledAI = append(controlledAI, e1chan, a1chan, e2chan)
+	//controlledAI = append(controlledAI, e1chan, a1chan, e2chan)
 
 	// TODO crear jugadores
 	g := simulation.NewGame(ps)
@@ -81,60 +74,4 @@ func mockUpGame(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-}
-
-func controlAI(ai *state.Player, out chan events.Event, in chan *simulation.GameState) {
-
-	for {
-		select {
-		case newState := <-in:
-			if aiCanPlay(ai, newState) {
-				// TODO react to player
-			}
-			if aiCanSing(ai, newState) {
-
-			}
-			if aiCanChange(ai, newState) {
-
-			}
-		}
-	}
-}
-
-func aiCanPlay(ai *state.Player, newState *simulation.GameState) bool {
-	for _, p := range newState.Players.All {
-		if p.Id == ai.Id && p.CanPlay {
-			return true
-		}
-	}
-	return false
-}
-
-func aiCanSing(ai *state.Player, newState *simulation.GameState) bool {
-	for _, p := range newState.Players.All {
-		if p.Id == ai.Id && p.CanSing {
-			return true
-		}
-	}
-	return false
-}
-
-func aiCanChange(ai *state.Player, newState *simulation.GameState) bool {
-	for _, p := range newState.Players.All {
-		if p.Id == ai.Id && p.CanChange {
-			return true
-		}
-	}
-	return false
-}
-
-func createAI(pair uint32) (*state.Player, chan events.Event) {
-	evtChan := make(chan events.Event)
-	defer func() {
-		IdNewPlayer++
-		PAIR++
-	}()
-	return state.CreatePlayer(
-		IdNewPlayer, pair,
-		fmt.Sprintf("IA_%d", IdNewPlayer)), evtChan
 }
