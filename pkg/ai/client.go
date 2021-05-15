@@ -1,8 +1,8 @@
 package ai
 
 import (
-	"Backend/internal/data"
 	"Backend/pkg/events"
+	"Backend/pkg/simulation"
 	"Backend/pkg/state"
 	"encoding/json"
 	"fmt"
@@ -19,7 +19,11 @@ type Client struct {
 	Id       uint32 `json:"player_id,omitempty"`
 	PairId   uint32 `json:"pair_id,omitempty"`
 	gameId   uint32
-	GameData *data.GameData
+	GameData *GameData
+}
+type GameData struct {
+	Status string               `json:"status,omitempty"`
+	Game   simulation.GameState `json:"game_state,omitempty"`
 }
 
 func Create(id, pairId, gameId uint32) *Client {
