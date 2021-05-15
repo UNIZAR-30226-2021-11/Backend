@@ -38,6 +38,7 @@ func (c *Client) Close() {
 	c.Conn.Close()
 }
 
+// Start Creates a new conn a proceeds with the full protocol spec
 func (c *Client) Start() {
 	c.Conn = newWsConn()
 
@@ -48,6 +49,17 @@ func (c *Client) Start() {
 	}
 	c.JoinGame(c.gameId)
 	// Receive messages
+	go c.handleEvents()
+}
+
+// TakeOver establish a WS conn and start handling events instead of the player
+func (c *Client) TakeOver() {
+	c.Conn = newWsConn()
+	err := c.WriteJSON(&c)
+	if err != nil {
+		log.Printf("error sending JSON:%v", err)
+		return
+	}
 	go c.handleEvents()
 }
 
@@ -68,10 +80,27 @@ func (c *Client) handleEvents() {
 			}
 			continue
 		}
-		// VOTE PAUSE
-		//c.PlayCard()
-		bytes, err := json.Marshal(c.GameData)
-		log.Printf("Client %v:Message received: %s", c.Id, bytes)
+		switch c.GameData.Status {
+		case "vote":
+			c.VotePause()
+		case "paused":
+			continue
+		case "normal":
+			if c.CanPlay() {
+				c.PlayCard()
+			}
+			ok, suit := c.CanSing()
+			if ok {
+				c.Sing(suit)
+			}
+
+			if c.CanChange() {
+				c.ChangeCard()
+			}
+		}
+
+		b, err := json.Marshal(c.GameData)
+		log.Printf("Client %v:Message received: %s", c.Id, b)
 	}
 }
 
@@ -80,7 +109,7 @@ func (c *Client) JoinGame(game uint32) {
 		GameID:    game,
 		PlayerID:  c.Id,
 		PairID:    c.PairId,
-		EventType: 1,
+		EventType: events.USER_JOINED,
 	}
 	_ = c.WriteJSON(event)
 }
@@ -90,39 +119,67 @@ func (c *Client) CreateGame(game uint32) {
 		GameID:    game,
 		PlayerID:  c.Id,
 		PairID:    c.PairId,
-		EventType: 0,
+		EventType: events.GAME_CREATE,
 	}
 	_ = c.WriteJSON(event)
 }
 
 func (c *Client) PlayCard() {
+	cr := c.pickBestCard()
+	e := events.Event{
+		GameID:    c.gameId,
+		PlayerID:  c.P.Id,
+		EventType: events.CARD_PLAYED,
+		Card:      cr,
+	}
+	_ = c.WriteJSON(e)
+}
 
+func (c *Client) Sing(suit string) {
+	e := events.Event{
+		GameID:    c.gameId,
+		PlayerID:  c.Id,
+		EventType: events.SING,
+		Suit:      suit,
+		HasSinged: true,
+	}
+	_ = c.WriteJSON(e)
+}
+
+func (c *Client) ChangeCard() {
+	event := events.Event{
+		GameID:    c.gameId,
+		PlayerID:  c.Id,
+		EventType: events.CARD_CHANGED,
+		Changed:   true,
+	}
+	_ = c.WriteJSON(event)
 }
 
 func (c *Client) PauseGame(game uint32) {
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
-		EventType: 6,
+		EventType: events.GAME_PAUSE,
 	}
 	_ = c.WriteJSON(event)
 }
 
-func (c *Client) VotePause(game uint32) {
+func (c *Client) VotePause() {
 	event := events.Event{
-		GameID:    game,
+		GameID:    c.gameId,
 		PlayerID:  c.Id,
 		Vote:      true,
-		EventType: 7,
+		EventType: events.VOTE_PAUSE,
 	}
 	_ = c.WriteJSON(event)
 }
 
 func (c *Client) LeaveGame() {
 	event := events.Event{
-		GameID:    1,
+		GameID:    c.gameId,
 		PlayerID:  c.Id,
-		EventType: 2,
+		EventType: events.USER_LEFT,
 	}
 	_ = c.WriteJSON(event)
 }
@@ -136,13 +193,13 @@ func (c *Client) CanPlay() bool {
 	return false
 }
 
-func (c *Client) CanSing() bool {
+func (c *Client) CanSing() (bool, string) {
 	for _, p := range c.GameData.Game.Players.All {
 		if p.Id == c.Id && p.CanSing {
-			return true
+			return true, p.SingSuit
 		}
 	}
-	return false
+	return false, ""
 }
 
 func (c *Client) CanChange() bool {

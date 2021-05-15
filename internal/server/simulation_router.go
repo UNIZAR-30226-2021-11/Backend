@@ -40,6 +40,7 @@ func NewSimulationRouter() *SimulationRouter {
 	eventDispatcher.RegisterGamePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterVotePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
+	eventDispatcher.RegisterUserJoinedListener(sr)
 	eventDispatcher.RegisterUserLeftListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr)
 	eventDispatcher.RegisterCardPlayedListener(sr.simulationRepository)
@@ -91,4 +92,14 @@ func (sr *SimulationRouter) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	}
 	client.Done()
 	delete(sr.clients, clientID)
+}
+
+func (sr *SimulationRouter) HandleUserJoined(userJoinedEvent *events.UserJoined) {
+	clientID := userJoinedEvent.PlayerID
+	client, ok := sr.clients[clientID]
+	if !ok {
+		log.Printf("Client %d not found\n", clientID)
+		return
+	}
+	client.gameID = userJoinedEvent.GameID
 }

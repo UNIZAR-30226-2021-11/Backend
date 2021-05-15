@@ -173,10 +173,7 @@ func (g *Game) newRound() {
 
 	if !g.GameState.Arrastre {
 		g.dealCards()
-	} else {
-		//TODO COMPROBAR CARTAS
 	}
-
 }
 
 // Process a new card played

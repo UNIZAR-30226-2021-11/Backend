@@ -36,7 +36,6 @@ func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *Simulatio
 }
 
 func (sr *SimulationRepository) HandleSingleGameCreate(singleGameCreateEvent *events.SingleGameCreate) {
-	//TODO
 	log.Printf("User %d trying to create single game %d\n",
 		singleGameCreateEvent.PlayerID, singleGameCreateEvent.GameID)
 
@@ -179,8 +178,14 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 }
 
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
-	//TODO: change user by IA
 
+	gid := userLeftEvent.GameID
+	pid := userLeftEvent.PlayerID
+	pairID := userLeftEvent.PairID
+	// TODO add pair id
+
+	a := ai.Create(pid, pairID, gid)
+	a.TakeOver()
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {

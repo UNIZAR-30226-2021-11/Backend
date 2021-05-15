@@ -23,6 +23,8 @@ const (
 // Client struct holds client-specific variables.
 type Client struct {
 	ID     uint32 `json:"player_id,omitempty"`
+	pairID uint32
+	gameID uint32
 	ws     *websocket.Conn
 	ch     chan interface{}
 	doneCh chan bool
@@ -47,7 +49,13 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 		log.Print("Error reading player ID")
 	}
 
-	return &Client{player.Id, ws, ch, doneCh, sr}
+	return &Client{
+		ID:     player.Id,
+		pairID: player.PairId,
+		ws:     ws,
+		ch:     ch,
+		doneCh: doneCh,
+		sr:     sr}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -147,7 +155,12 @@ func (c *Client) readFromWebSocket() {
 		log.Println(err)
 
 		c.doneCh <- true
-		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{PlayerID: c.ID})
+		//TODO add fields that are needed
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 	} else {
 		c.unmarshalUserInput(event)
 	}
@@ -201,6 +214,7 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 		e := &events.UserLeft{
 			PlayerID: event.PlayerID,
 			GameID:   event.GameID,
+			PairID:   event.PairID,
 		}
 		c.sr.EventsDispatcher.FireUserLeft(e)
 
