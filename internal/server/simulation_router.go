@@ -35,6 +35,7 @@ func NewSimulationRouter() *SimulationRouter {
 	}
 
 	eventDispatcher.RegisterStateChangedListener(sr)
+	eventDispatcher.RegisterStateChangedListener(sr.simulationRepository)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
 	eventDispatcher.RegisterSingleGameCreateListener(sr.simulationRepository)
 	eventDispatcher.RegisterGamePauseListener(sr.simulationRepository)

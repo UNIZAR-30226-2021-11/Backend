@@ -155,7 +155,6 @@ func (c *Client) readFromWebSocket() {
 		log.Println(err)
 
 		c.doneCh <- true
-		//TODO add fields that are needed
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
 			PlayerID: c.ID,
 			PairID:   c.pairID,

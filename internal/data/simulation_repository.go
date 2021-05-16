@@ -182,8 +182,11 @@ func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	gid := userLeftEvent.GameID
 	pid := userLeftEvent.PlayerID
 	pairID := userLeftEvent.PairID
-	// TODO add pair id
-
+	_, ok := sr.games[gid]
+	if !ok {
+		log.Printf("Game %d not found\n", gid)
+		return
+	}
 	a := ai.Create(pid, pairID, gid)
 	a.TakeOver()
 }
@@ -198,13 +201,25 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 	game.HandleCardPlayed(cardPlayedEvent.Card)
 
 	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
-	if game.GameState.Ended {
-		// TODO llamada a la api
-		delete(sr.games, cardPlayedEvent.GameID)
-		log.Printf("game %d ended", cardPlayedEvent.GameID)
-	}
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+}
+
+func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
+	game, ok := sr.games[changed.GameID]
+	if ok && game.GameState.Ended {
+		// TODO llamada a la api
+
+		delete(sr.games, changed.GameID)
+		log.Printf("game %d ended", changed.GameID)
+		for _, p := range changed.ClientsID {
+			sr.eventDispatcher.FireUserLeft(&events.UserLeft{
+				PlayerID: p,
+				GameID:   changed.GameID,
+				PairID:   0,
+			})
+		}
+	}
 }
 
 func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardChanged) {
@@ -233,12 +248,6 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 
 	log.Printf("Client %v Game %v: Changed card: %v %v", singEvent.PlayerID,
 		singEvent.GameID, singEvent.Suit, singEvent.HasSinged)
-
-	if game.GameState.Ended {
-		// TODO llamada a la api
-		delete(sr.games, singEvent.GameID)
-		log.Printf("game %d ended", singEvent.GameID)
-	}
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
