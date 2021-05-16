@@ -200,6 +200,7 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
 	if game.GameState.Ended {
 		// TODO llamada a la api
+		delete(sr.games, cardPlayedEvent.GameID)
 		log.Printf("game %d ended", cardPlayedEvent.GameID)
 	}
 
@@ -235,6 +236,7 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 
 	if game.GameState.Ended {
 		// TODO llamada a la api
+		delete(sr.games, singEvent.GameID)
 		log.Printf("game %d ended", singEvent.GameID)
 	}
 

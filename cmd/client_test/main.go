@@ -62,7 +62,11 @@ func test2() {
 					}
 					if c.CanPlay() {
 						log.Printf("ai %d, game %d: playing card", c.Id, 6)
-						c.PlayCard()
+						err = c.PlayCard()
+						if err != nil {
+							log.Printf("%v", err)
+							return
+						}
 					}
 					ok, suit := c.CanSing()
 					if ok {
@@ -257,7 +261,7 @@ func (c *Client) CanPlay() bool {
 	}
 	return false
 }
-func (c *Client) PlayCard() {
+func (c *Client) PlayCard() error {
 	cr := c.pickBestCard()
 	e := events.Event{
 		GameID:    6,
@@ -265,7 +269,7 @@ func (c *Client) PlayCard() {
 		EventType: events.CARD_PLAYED,
 		Card:      cr,
 	}
-	_ = c.WriteJSON(e)
+	return c.WriteJSON(e)
 }
 func (c *Client) CanSing() (bool, string) {
 	for _, p := range c.GameData.Game.Players.All {

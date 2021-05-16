@@ -156,6 +156,7 @@ func (g *Game) initialCardDealing() {
 
 	cards := g.deck.InitialPick()
 	g.GameState.Players.InitialCardDealing(cards)
+
 }
 
 //Starts a new round
@@ -373,6 +374,7 @@ func (g *Game) changeCard(hasChanged bool) {
 
 				if seven != nil {
 					last := g.deck.ChangeCard(seven)
+					g.GameState.TriumphCard = last
 					p.ChangeCard(triumph, last)
 				}
 			}
@@ -539,6 +541,9 @@ func (g *Game) restart() {
 	g.rounds[0] = NewRound(g.deck.GetTriumph())
 	g.initialCardDealing()
 
+	for _, player := range g.GameState.Players.All {
+		g.rounds[0].CanPlayCards(g.GameState.Arrastre, player.GetCards())
+	}
 	g.GameState.currentState = t1
 }
 
