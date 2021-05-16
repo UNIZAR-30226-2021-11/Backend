@@ -308,6 +308,48 @@ func (gr *GameRepository) CreateTournament(ctx context.Context, g *game.Game) er
 	return nil
 }
 
+// End ends a game by id.
+func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
+	q1 := `
+	UPDATE games set end_date = $1
+		WHERE id = $2;
+	`
+
+	q2 := `
+	UPDATE pairs set winned = true
+		WHERE id = $1;
+	`
+	stmt, err := gr.Data.DB.PrepareContext(ctx, q1)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, time.Now(), game.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	stmt, err = gr.Data.DB.PrepareContext(ctx, q2)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, time.Now(), game.WinnedPair,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Update updates a game by id.
 func (gr *GameRepository) Update(ctx context.Context, id uint, game game.Game) error {
 	//TODO

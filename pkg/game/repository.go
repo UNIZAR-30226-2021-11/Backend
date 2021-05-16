@@ -13,4 +13,5 @@ type Repository interface {
 	CreateTournament(ctx context.Context, g *Game) error
 	Update(ctx context.Context, id uint, game Game) error
 	Delete(ctx context.Context, id uint) error
+	End(ctx context.Context, game Game) error
 }
