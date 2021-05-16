@@ -132,6 +132,29 @@ func (gr *GameRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"game": game})
 }
 
+<<<<<<< Updated upstream:internal/server/v1/game_router.go
+=======
+func (gr *GameRouter) EndHandler (w http.ResponseWriter, r *http.Request) {
+	var g game.Game
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	err = gr.Repository.End(ctx, g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, nil)
+}
+
+>>>>>>> Stashed changes:internal/server/game_router.go
 // Routes returns game router with each endpoint.
 func (gr *GameRouter) Routes() http.Handler {
 	r := chi.NewRouter()
@@ -148,7 +171,16 @@ func (gr *GameRouter) Routes() http.Handler {
 
 	r.Post("/{userId}", gr.CreateHandler)
 
+<<<<<<< Updated upstream:internal/server/v1/game_router.go
 	r.Post("/tournament", gr.CreateTournamentHandler)
+=======
+	//
+	//r.Get("/{name}", gr.GetByName)
+	//
+	r.Put("/{id}", gr.EndHandler)
+	//
+	//r.Delete("/{id}", gr.DeleteHandler)
+>>>>>>> Stashed changes:internal/server/game_router.go
 
 	return r
 }
