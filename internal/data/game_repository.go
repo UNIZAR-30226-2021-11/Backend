@@ -341,7 +341,7 @@ func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(
-		ctx, time.Now(), game.WinnedPair,
+		ctx, game.WinnedPair,
 	)
 	if err != nil {
 		return err

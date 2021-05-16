@@ -170,7 +170,7 @@ func (gr *GameRouter) Routes() http.Handler {
 
 	r.Post("/tournament", gr.CreateTournamentHandler)
 
-	r.Put("/{id}", gr.EndHandler)
+	r.Put("/", gr.EndHandler)
 
 	return r
 }
