@@ -4,7 +4,6 @@ import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
 	"Backend/pkg/state"
-	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/url"
@@ -16,6 +15,76 @@ const (
 )
 
 func main() {
+	test2()
+}
+
+func test2() {
+	c := Client{
+		Id:     5,
+		PairId: 2,
+	}
+
+	c.Conn = newWsConn()
+
+	err := c.WriteJSON(&c)
+	if err != nil {
+		log.Printf("error sending JSON:%v", err)
+		return
+	}
+	c.CreateSoloGame(6)
+	go func() {
+		defer func() {
+			err := c.Close()
+			if err != nil {
+				log.Printf("%v", err)
+			}
+		}()
+		for {
+			for {
+				err := c.ReadJSON(&c.GameData)
+				if err != nil {
+					log.Print("Error reading JSON")
+					err := c.Conn.Close()
+					if err != nil {
+						return
+					}
+					continue
+				}
+				time.Sleep(time.Millisecond * 200)
+				switch c.GameData.Status {
+				case "vote":
+					c.VotePause(6)
+				case "paused":
+					continue
+				case "normal":
+					if c.GameData.Game.Ended {
+						return
+					}
+					if c.CanPlay() {
+						log.Printf("ai %d, game %d: playing card", c.Id, 6)
+						c.PlayCard()
+					}
+					ok, suit := c.CanSing()
+					if ok {
+						log.Printf("ai %d, game %d: singing", c.Id, 6)
+						c.Sing(suit)
+					}
+
+					if c.CanChange() {
+						log.Printf("ai %d, game %d: changing", c.Id, 6)
+						c.ChangeCard()
+					}
+				}
+
+				//b, err := json.Marshal(c.GameData)
+				//log.Printf("Client %v:Message received: %s", c.Id, b)
+			}
+		}
+	}()
+	time.Sleep(time.Second * 1000)
+}
+
+func test1() {
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
@@ -79,14 +148,45 @@ func (c *Client) Start() {
 			}
 		}()
 		for {
-			err := c.ReadJSON(&c.GameData)
-			if err != nil {
-				log.Print("Error reading JSON")
-				continue
+			for {
+				err := c.ReadJSON(&c.GameData)
+				if err != nil {
+					log.Print("Error reading JSON")
+					err := c.Conn.Close()
+					if err != nil {
+						return
+					}
+					continue
+				}
+				time.Sleep(time.Millisecond * 200)
+				switch c.GameData.Status {
+				case "vote":
+					c.VotePause(6)
+				case "paused":
+					continue
+				case "normal":
+					if c.GameData.Game.Ended {
+						return
+					}
+					if c.CanPlay() {
+						//log.Printf("ai %d, game %d: playing card", c.Id, c.gameId)
+						c.PlayCard()
+					}
+					ok, suit := c.CanSing()
+					if ok {
+						log.Printf("ai %d, game %d: singing", c.Id, 6)
+						c.Sing(suit)
+					}
+
+					if c.CanChange() {
+						log.Printf("ai %d, game %d: changing", c.Id, 6)
+						c.ChangeCard()
+					}
+				}
+
+				//b, err := json.Marshal(c.GameData)
+				//log.Printf("Client %v:Message received: %s", c.Id, b)
 			}
-			//c.PlayCard()
-			bytes, err := json.Marshal(c.GameData)
-			log.Printf("Client %v:Message received: %s", c.Id, bytes)
 		}
 	}()
 }
@@ -111,48 +211,14 @@ func (c *Client) CreateGame(game uint32) {
 	_ = c.WriteJSON(event)
 }
 
-func (c *Client) PlayCard() {
-	players := c.GameData.Game.Players.All
-
-guarrada:
-	for _, player := range players {
-		if player.Id == c.Id {
-			if player.CanPlay {
-				for _, card := range player.Cards {
-					if card != nil && card.Playable {
-						event := events.Event{
-							GameID:    1,
-							PlayerID:  c.Id,
-							EventType: 3,
-							Card:      card,
-						}
-						_ = c.WriteJSON(event)
-						break guarrada
-					}
-				}
-			} else if player.CanSing {
-				event := events.Event{
-					GameID:    1,
-					PlayerID:  c.Id,
-					EventType: 5,
-					Suit:      player.SingSuit,
-					HasSinged: false,
-				}
-				_ = c.WriteJSON(event)
-				break guarrada
-			} else if player.CanChange {
-				event := events.Event{
-					GameID:    1,
-					PlayerID:  c.Id,
-					EventType: 4,
-					Changed:   false,
-				}
-				_ = c.WriteJSON(event)
-				break guarrada
-			}
-		}
-
+func (c *Client) CreateSoloGame(game uint32) {
+	event := events.Event{
+		GameID:    game,
+		PlayerID:  c.Id,
+		PairID:    c.PairId,
+		EventType: 8,
 	}
+	_ = c.WriteJSON(event)
 }
 
 func (c *Client) PauseGame(game uint32) {
@@ -191,16 +257,45 @@ func (c *Client) CanPlay() bool {
 	}
 	return false
 }
-
-func (c *Client) CanSing() bool {
+func (c *Client) PlayCard() {
+	cr := c.pickBestCard()
+	e := events.Event{
+		GameID:    6,
+		PlayerID:  c.Id,
+		EventType: events.CARD_PLAYED,
+		Card:      cr,
+	}
+	_ = c.WriteJSON(e)
+}
+func (c *Client) CanSing() (bool, string) {
 	for _, p := range c.GameData.Game.Players.All {
 		if p.Id == c.Id && p.CanSing {
-			return true
+			return true, p.SingSuit
 		}
 	}
-	return false
+	return false, ""
 }
 
+func (c *Client) Sing(suit string) {
+	e := events.Event{
+		GameID:    6,
+		PlayerID:  c.Id,
+		EventType: events.SING,
+		Suit:      suit,
+		HasSinged: true,
+	}
+	_ = c.WriteJSON(e)
+}
+
+func (c *Client) ChangeCard() {
+	event := events.Event{
+		GameID:    6,
+		PlayerID:  c.Id,
+		EventType: events.CARD_CHANGED,
+		Changed:   true,
+	}
+	_ = c.WriteJSON(event)
+}
 func (c *Client) CanChange() bool {
 	for _, p := range c.GameData.Game.Players.All {
 		if p.Id == c.Id && p.CanChange {
@@ -213,9 +308,9 @@ func (c *Client) CanChange() bool {
 // pickBestCard returns the first card playable
 func (c *Client) pickBestCard() *state.Card {
 	// TODO picking card logic
-	for _, card := range c.GetCards() {
-		if card.CanBePlayed() {
-			return card
+	for _, c := range c.GetCards() {
+		if c != nil && c.CanBePlayed() {
+			return c
 		}
 	}
 	return nil

@@ -148,7 +148,14 @@ func (p *Player) PickCard(card int) (c *Card) {
 
 // GetCards return the non-nil cards
 func (p *Player) GetCards() []*Card {
-	return p.Cards[0:p.cardCount]
+	var cs []*Card
+	for _, c := range p.Cards {
+		if c != nil {
+			cs = append(cs, c)
+		}
+	}
+
+	return cs
 }
 
 // SetPlay changes if this player can play.

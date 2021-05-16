@@ -4,13 +4,13 @@ import (
 	"Backend/pkg/events"
 	"Backend/pkg/simulation"
 	"Backend/pkg/state"
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"log"
 	"net/url"
 	"os"
+	"time"
 )
 
 type Client struct {
@@ -84,27 +84,35 @@ func (c *Client) handleEvents() {
 			}
 			continue
 		}
+		time.Sleep(time.Millisecond * 200)
 		switch c.GameData.Status {
 		case "vote":
 			c.VotePause()
 		case "paused":
 			continue
 		case "normal":
+			if c.GameData.Game.Ended {
+				log.Printf("ai %d, game %d: leaving", c.Id, c.gameId)
+				return
+			}
 			if c.CanPlay() {
+				//log.Printf("ai %d, game %d: playing card", c.Id, c.gameId)
 				c.PlayCard()
 			}
 			ok, suit := c.CanSing()
 			if ok {
+				log.Printf("ai %d, game %d: singing", c.Id, c.gameId)
 				c.Sing(suit)
 			}
 
 			if c.CanChange() {
+				log.Printf("ai %d, game %d: changing", c.Id, c.gameId)
 				c.ChangeCard()
 			}
 		}
 
-		b, err := json.Marshal(c.GameData)
-		log.Printf("Client %v:Message received: %s", c.Id, b)
+		//b, err := json.Marshal(c.GameData)
+		//log.Printf("Client %v:Message received: %s", c.Id, b)
 	}
 }
 
@@ -115,7 +123,10 @@ func (c *Client) JoinGame(game uint32) {
 		PairID:    c.PairId,
 		EventType: events.USER_JOINED,
 	}
-	_ = c.WriteJSON(event)
+	err := c.WriteJSON(event)
+	if err != nil {
+		log.Printf("error joining game, %v", err)
+	}
 }
 
 func (c *Client) CreateGame(game uint32) {

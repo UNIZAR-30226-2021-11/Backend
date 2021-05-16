@@ -166,7 +166,9 @@ func (r *round) CanPlayCards(arrastre bool, cs []*state.Card) {
 
 func setPlayable(playable bool, cards []*state.Card) {
 	for _, c := range cards {
-		c.AllowPlay(playable)
+		if c != nil {
+			c.AllowPlay(playable)
+		}
 	}
 }
 

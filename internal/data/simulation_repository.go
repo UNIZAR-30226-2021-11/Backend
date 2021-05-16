@@ -44,7 +44,7 @@ func (sr *SimulationRepository) HandleSingleGameCreate(singleGameCreateEvent *ev
 	sr.futureGames[gameId] = players
 
 	var ais []*ai.Client
-	for i := 1; i < 3; i++ {
+	for i := 1; i < 4; i++ {
 		aiClient := ai.Create(uint32(i), uint32(i%2)+1, gameId)
 		ais = append(ais, aiClient)
 	}
@@ -198,6 +198,10 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 	game.HandleCardPlayed(cardPlayedEvent.Card)
 
 	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
+	if game.GameState.Ended {
+		// TODO llamada a la api
+		log.Printf("game %d ended", cardPlayedEvent.GameID)
+	}
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
@@ -228,6 +232,11 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 
 	log.Printf("Client %v Game %v: Changed card: %v %v", singEvent.PlayerID,
 		singEvent.GameID, singEvent.Suit, singEvent.HasSinged)
+
+	if game.GameState.Ended {
+		// TODO llamada a la api
+		log.Printf("game %d ended", singEvent.GameID)
+	}
 
 	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }

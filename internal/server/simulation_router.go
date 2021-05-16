@@ -76,6 +76,13 @@ func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
 	}
 }
 
+func (sr *SimulationRouter) AddGameToClient(clientID uint32, gameID uint32) {
+	client, ok := sr.clients[clientID]
+	if ok {
+		client.gameID = gameID
+	}
+}
+
 func (sr *SimulationRouter) HandleStateChanged(stateChangedEvent *events.StateChanged) {
 	clientsID := stateChangedEvent.ClientsID
 	for _, c := range clientsID {

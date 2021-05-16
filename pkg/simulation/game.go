@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"Backend/pkg/state"
+	"log"
 )
 
 const (
@@ -159,6 +160,14 @@ func (g *Game) initialCardDealing() {
 
 //Starts a new round
 func (g *Game) newRound() {
+	log.Printf("--------------NEW ROUND %d", g.currentRound)
+	for _, p := range g.GameState.Players.All {
+		p.CanPlay = false
+		p.CanSing = false
+		p.CanChange = false
+	}
+	g.pairCanSwapCard = false
+	g.pairCanSing = false
 
 	g.currentRound++
 	g.GameState.CurrentRound++
@@ -197,14 +206,10 @@ func (g *Game) processCard(c *state.Card) {
 	case t4:
 		g.cardPlayed(c)
 		g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
-
+		g.GameState.Players.Current().SetPlay(false)
 		g.checkRoundWinner()
 		g.updatePoints()
 		g.updateSings()
-
-		if !g.cardHasBeenChanged {
-			g.updateChange()
-		}
 
 		if g.GameState.Vueltas {
 			g.GameState.currentState = checkWinnerVueltas
@@ -218,6 +223,9 @@ func (g *Game) processCard(c *state.Card) {
 
 // Process a card played, advances the player
 func (g *Game) cardPlayed(c *state.Card) {
+	if c == nil {
+		log.Panic("CARTA NULL")
+	}
 	current := g.GameState.Players.Current()
 	r := g.rounds[g.currentRound]
 	r.playedCard(current, c)
@@ -319,8 +327,6 @@ func (g *Game) checkWinnerIdas() {
 		// Comprobar puntos de cada equipo
 		g.ended()
 	} else {
-		//
-		g.GameState.Vueltas = true
 		g.restart()
 	}
 }
@@ -329,7 +335,7 @@ func (g *Game) singingState() {
 
 	if !g.pairCanSing {
 		g.GameState.currentState = swap7
-		g.swapCard()
+		g.afterSwapCard()
 
 	}
 }
@@ -377,12 +383,18 @@ func (g *Game) changeCard(hasChanged bool) {
 		p.CanChange = false
 	}
 	g.pairCanSwapCard = false
-	g.swapCard()
+	if g.currentRound == 9 {
+
+		g.GameState.currentState = checkWinnerIdas
+		g.checkWinnerIdas()
+	} else {
+		g.GameState.currentState = t1
+		g.newRound()
+	}
 }
 
-func (g *Game) swapCard() {
-
-	if !g.pairCanSwapCard {
+func (g *Game) afterSwapCard() {
+	if g.cardHasBeenChanged {
 		if g.currentRound == 9 {
 
 			g.GameState.currentState = checkWinnerIdas
@@ -392,8 +404,31 @@ func (g *Game) swapCard() {
 			g.newRound()
 		}
 	} else {
-		g.GameState.currentState = swap7
+		g.updateChange()
+		if !g.pairCanSwapCard {
+			if g.currentRound == 9 {
+
+				g.GameState.currentState = checkWinnerIdas
+				g.checkWinnerIdas()
+			} else {
+				g.GameState.currentState = t1
+				g.newRound()
+			}
+		}
 	}
+
+	//if !g.cardHasBeenChanged && !g.pairCanSwapCard {
+	//	if g.currentRound == 9 {
+	//
+	//		g.GameState.currentState = checkWinnerIdas
+	//		g.checkWinnerIdas()
+	//	} else {
+	//		g.GameState.currentState = t1
+	//		g.newRound()
+	//	}
+	//} else {
+	//	g.updateChange()
+	//}
 }
 
 //
@@ -488,9 +523,13 @@ func (g *Game) restart() {
 	for i := range g.rounds {
 		g.rounds[i] = nil
 	}
-
-	g.pairCanSing = false
+	for _, p := range g.GameState.Players.All {
+		p.CanPlay = false
+		p.CanSing = false
+		p.CanChange = false
+	}
 	g.pairCanSwapCard = false
+	g.pairCanSing = false
 
 	// Set first player and deal initial cards
 	g.GameState.Players.SetFirstPlayer(g.winnerLastRound.Player)

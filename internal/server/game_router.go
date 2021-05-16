@@ -97,6 +97,9 @@ func (gr *GameRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"game": game})
 }
 
+func (gr *GameRouter) PutEndedGame(w http.ResponseWriter, r *http.Request) {
+
+}
 
 // Routes returns game router with each endpoint.
 func (gr *GameRouter) Routes() http.Handler {
