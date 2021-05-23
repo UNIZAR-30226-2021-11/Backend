@@ -118,7 +118,7 @@ func (gr *GameRouter) Routes() http.Handler {
 	//
 	//r.Get("/{name}", gr.GetByName)
 	//
-	//r.Put("/{id}", gr.UpdateHandler)
+	//r.Put("/{id}", gr.UpdateWinnedHandler)
 	//
 	//r.Delete("/{id}", gr.DeleteHandler)
 
