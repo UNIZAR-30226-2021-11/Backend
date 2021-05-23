@@ -3,9 +3,15 @@ package data
 import (
 	"Backend/pkg/ai"
 	"Backend/pkg/events"
+	"Backend/pkg/pair"
 	"Backend/pkg/simulation"
 	"Backend/pkg/state"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"strconv"
 )
 
 const (
@@ -220,6 +226,39 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 			})
 		}
 	}
+}
+
+//TODO: call from where appropiate
+// updatePairWon updates the pair info in the API
+func (sr *SimulationRepository) updatePairWon(pairID uint, winned bool, gamePoints int) {
+	pair := pair.Pair{
+		Winned:     winned,
+		GamePoints: gamePoints,
+	}
+
+	// initialize http client
+	client := &http.Client{}
+
+	// marshal User to json
+	json, err := json.Marshal(pair)
+	if err != nil {
+		panic(err)
+	}
+	url := "http://localhost:9000/api/v1/pairs/" + strconv.Itoa(int(pairID))
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.StatusCode)
 }
 
 func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardChanged) {

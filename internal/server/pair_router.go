@@ -1,7 +1,6 @@
 package server
 
 import (
-	"Backend/internal/middleware"
 	"Backend/pkg/pair"
 	"Backend/pkg/response"
 	"encoding/json"
@@ -49,7 +48,6 @@ func (pr *PairRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
 	r.
-		With(middleware.Authorizator).
 		Put("/{id}", pr.UpdateWinnedHandler)
 
 	return r
