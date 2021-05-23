@@ -76,7 +76,6 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 		UserName: gameCreateEvent.UserName,
 	})
 }
-
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
@@ -178,6 +177,7 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 }
 
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
+	//TODO: change user by IA
 
 	gid := userLeftEvent.GameID
 	pid := userLeftEvent.PlayerID

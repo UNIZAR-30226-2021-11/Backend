@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS games (
     id serial NOT NULL,
     name VARCHAR(150) NOT NULL UNIQUE,
     public BOOLEAN NOT NULL,
+    tournament BOOLEAN NOT NULL DEFAULT false,
     creation_date timestamp DEFAULT now(),
     end_date timestamp,
     CONSTRAINT pk_games PRIMARY KEY(id)
@@ -22,7 +23,8 @@ CREATE TABLE IF NOT EXISTS games (
 
 CREATE TABLE IF NOT EXISTS pairs (
     id serial NOT NULL,
-    winned BOOLEAN,
+    winned BOOLEAN DEFAULT false,
+    game_points INT DEFAULT 0,
     game_id INT NOT NULL,
     CONSTRAINT pk_pairs PRIMARY KEY(id),
     CONSTRAINT fk_pairs_games FOREIGN KEY(game_id) REFERENCES games(id)

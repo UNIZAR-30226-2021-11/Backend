@@ -46,7 +46,6 @@ func (ur *UserRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
 func (ur *UserRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 
-
 	ctx := r.Context()
 	u, err := ur.Repository.GetByUsername(ctx, username)
 	if err != nil {
@@ -142,7 +141,6 @@ func (ur *UserRouter) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // Routes returns user router with each endpoint.
 func (ur *UserRouter) Routes() http.Handler {
 	r := chi.NewRouter()
-
 
 	r.Post("/", ur.CreateHandler)
 

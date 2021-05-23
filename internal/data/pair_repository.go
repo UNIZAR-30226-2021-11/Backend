@@ -11,8 +11,8 @@ type PairRepository struct {
 
 func (pr *PairRepository) UpdateWinned(ctx context.Context, id uint, p pair.Pair) error {
 	q := `
-	UPDATE pairs set winned=true
-		WHERE id=$1;
+	UPDATE pairs set winned=$1, game_points=$2
+		WHERE id=$3;
 	`
 
 	stmt, err := pr.Data.DB.PrepareContext(ctx, q)
@@ -23,7 +23,7 @@ func (pr *PairRepository) UpdateWinned(ctx context.Context, id uint, p pair.Pair
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(
-		ctx, id,
+		ctx, p.Winned, p.GamePoints, id,
 	)
 	if err != nil {
 		return err

@@ -35,7 +35,7 @@ func (pr *PairRouter) UpdateWinnedHandler(w http.ResponseWriter, r *http.Request
 	defer r.Body.Close()
 
 	ctx := r.Context()
-	err = pr.Repository.UpdateWinned(ctx, uint(id))
+	err = pr.Repository.UpdateWinned(ctx, uint(id), p)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusNotFound, err.Error())
 		return
