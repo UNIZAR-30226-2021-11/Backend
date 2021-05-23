@@ -3,9 +3,14 @@ package main
 import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
+	pair2 "Backend/pkg/pair"
 	"Backend/pkg/state"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -15,7 +20,39 @@ const (
 )
 
 func main() {
-	test2()
+	test3()
+	//test2()
+}
+
+func test3() {
+	pair := pair2.Pair{
+		Winned:     true,
+		GamePoints: 80,
+	}
+
+	// initialize http client
+	client := &http.Client{}
+
+	// marshal User to json
+	json, err := json.Marshal(pair)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:9000/api/v1/pairs/18", bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.StatusCode)
 }
 
 func test2() {
