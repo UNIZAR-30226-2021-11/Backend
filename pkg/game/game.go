@@ -15,6 +15,7 @@ type Game struct {
 	Tournament   bool        `json:"tournament,omitempty"`
 	PlayersCount int         `json:"players_count,omitempty"`
 	Winned       bool        `json:"winned"`
+	WinnedPair   uint        `json:"winned_pair,omitempty"`
 	Points       int         `json:"points"`
 	Pairs        []pair.Pair `json:"pairs,omitempty"`
 	CreationDate time.Time   `json:"creation_date,omitempty"`
