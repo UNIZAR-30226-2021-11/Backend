@@ -85,7 +85,7 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 	})
 }
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
-	log.Printf("User %s-%d trying to join game %d\n", userJoinedEvent.UserName, userJoinedEvent.PlayerID, userJoinedEvent.GameID)
+	log.Printf("User %d trying to join game %d\n", userJoinedEvent.PlayerID, userJoinedEvent.GameID)
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
 		Id:   userJoinedEvent.PlayerID,
