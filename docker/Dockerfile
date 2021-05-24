@@ -10,4 +10,5 @@ RUN go build -o /backend cmd/backend/main.go
 
 FROM debian:jessie
 COPY --from=builder /backend /
+COPY --from=builder /database/models.sql /database/models.sql
 CMD /backend
