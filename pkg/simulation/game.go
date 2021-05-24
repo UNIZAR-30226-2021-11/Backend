@@ -161,7 +161,7 @@ func (g *Game) initialCardDealing() {
 
 //Starts a new round
 func (g *Game) newRound() {
-	log.Printf("--------------NEW ROUND %d", g.currentRound)
+	log.Printf("--------------NEW ROUND %d", g.currentRound+1)
 	for _, p := range g.GameState.Players.All {
 		p.CanPlay = false
 		p.CanSing = false

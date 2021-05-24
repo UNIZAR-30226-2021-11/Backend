@@ -38,7 +38,7 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 	}
 
 	ch := make(chan interface{}, channelBufSize)
-	doneCh := make(chan bool)
+	doneCh := make(chan bool, channelBufSize)
 
 	player := struct {
 		Id     uint32 `json:"player_id,omitempty"`
@@ -55,7 +55,8 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 		ws:     ws,
 		ch:     ch,
 		doneCh: doneCh,
-		sr:     sr}
+		sr:     sr,
+	}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -87,6 +88,11 @@ func (c *Client) Listen() {
 func (c *Client) listenWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		ticker.Stop()
 		err := c.ws.Close()
 		if err != nil {
@@ -125,6 +131,11 @@ func (c *Client) listenWrite() {
 
 func (c *Client) listenRead() {
 	defer func() {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		err := c.ws.Close()
 		if err != nil {
 			log.Println("Error:", err.Error())
@@ -152,14 +163,14 @@ func (c *Client) readFromWebSocket() {
 	var event events.Event
 	err := c.ws.ReadJSON(&event)
 	if err != nil {
-		log.Println(err)
-
-		c.doneCh <- true
 		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
 			PlayerID: c.ID,
 			PairID:   c.pairID,
 			GameID:   c.gameID,
 		})
+		log.Println(err)
+
+		c.doneCh <- true
 	} else {
 		c.unmarshalUserInput(event)
 	}

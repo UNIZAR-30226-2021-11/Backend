@@ -20,8 +20,9 @@ const (
 )
 
 func main() {
-	test3()
+	//test3()
 	//test2()
+	test4()
 }
 
 func test3() {
@@ -125,7 +126,7 @@ func test2() {
 	time.Sleep(time.Second * 1000)
 }
 
-func test1() {
+func test4() {
 	var clients []Client
 
 	for i := 0; i < NUM_CLIENT; i++ {
@@ -135,27 +136,12 @@ func test1() {
 	}
 	time.Sleep(time.Second * 1)
 
-	clients[0].CreateGame(1)
+	clients[0].CreateGame(6)
 
 	time.Sleep(time.Second * 1)
 
 	for i := 1; i < NUM_CLIENT; i++ {
-		clients[i].JoinGame(1)
-	}
-
-	time.Sleep(time.Second * 2)
-
-	clients[3].PauseGame(1)
-
-	time.Sleep(time.Second * 2)
-
-	clients[0].VotePause(1)
-
-	// Game is paused
-	time.Sleep(time.Second * 2)
-	for _, c := range clients {
-		c.JoinGame(1)
-		time.Sleep(time.Second * 1)
+		clients[i].JoinGame(6)
 	}
 
 	for {
@@ -207,6 +193,8 @@ func (c *Client) Start() {
 					continue
 				case "normal":
 					if c.GameData.Game.Ended {
+						log.Printf("client %d leaving game", c.Id)
+						c.LeaveGame(6)
 						return
 					}
 					if c.CanPlay() {
@@ -281,9 +269,9 @@ func (c *Client) VotePause(game uint32) {
 	_ = c.WriteJSON(event)
 }
 
-func (c *Client) LeaveGame() {
+func (c *Client) LeaveGame(game uint32) {
 	event := events.Event{
-		GameID:    1,
+		GameID:    game,
 		PlayerID:  c.Id,
 		EventType: 2,
 	}
