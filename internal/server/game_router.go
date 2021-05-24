@@ -45,11 +45,46 @@ func (gr *GameRouter) CreateHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusCreated, response.Map{"game": g})
 }
 
+//CreateHandler Create a new tournament game.
+func (gr *GameRouter) CreateTournamentHandler(w http.ResponseWriter, r *http.Request) {
+	var g game.Game
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	err = gr.Repository.CreateTournament(ctx, &g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.Header().Add("Location", fmt.Sprintf("%s%d", r.URL.String(), g.ID))
+	response.JSON(w, r, http.StatusCreated, response.Map{"game": g})
+}
+
 // GetAllHandler response all public started games.
 func (gr *GameRouter) GetAllHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	posts, err := gr.Repository.GetAll(ctx)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, response.Map{"games": posts})
+}
+
+// GetTournamentHandler response all tournament games.
+func (gr *GameRouter) GetTournamentHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	posts, err := gr.Repository.GetTournament(ctx)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusNotFound, err.Error())
 		return
@@ -97,8 +132,24 @@ func (gr *GameRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"game": game})
 }
 
-func (gr *GameRouter) PutEndedGame(w http.ResponseWriter, r *http.Request) {
+func (gr *GameRouter) EndHandler(w http.ResponseWriter, r *http.Request) {
+	var g game.Game
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
 
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	err = gr.Repository.End(ctx, g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, nil)
 }
 
 // Routes returns game router with each endpoint.
@@ -111,16 +162,15 @@ func (gr *GameRouter) Routes() http.Handler {
 
 	r.Get("/", gr.GetAllHandler)
 
+	r.Get("/tournament", gr.GetTournamentHandler)
+
 	r.Get("/{gameId}", gr.GetOneHandler)
 
 	r.Post("/{userId}", gr.CreateHandler)
 
-	//
-	//r.Get("/{name}", gr.GetByName)
-	//
-	//r.Put("/{id}", gr.UpdateHandler)
-	//
-	//r.Delete("/{id}", gr.DeleteHandler)
+	r.Post("/tournament", gr.CreateTournamentHandler)
+
+	r.Put("/", gr.EndHandler)
 
 	return r
 }

@@ -3,10 +3,14 @@ package main
 import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
+	pair2 "Backend/pkg/pair"
 	"Backend/pkg/state"
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -16,8 +20,40 @@ const (
 )
 
 func main() {
+	//test3()
 	//test2()
-	test1()
+	test4()
+}
+
+func test3() {
+	pair := pair2.Pair{
+		Winned:     true,
+		GamePoints: 80,
+	}
+
+	// initialize http client
+	client := &http.Client{}
+
+	// marshal User to json
+	json, err := json.Marshal(pair)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, "http://localhost:9000/api/v1/pairs/18", bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.StatusCode)
 }
 
 func test2() {
@@ -25,7 +61,6 @@ func test2() {
 		Id:     5,
 		PairId: 2,
 	}
-	game := uint32(5000)
 
 	c.Conn = newWsConn()
 
@@ -34,7 +69,7 @@ func test2() {
 		log.Printf("error sending JSON:%v", err)
 		return
 	}
-	c.CreateSoloGame(game)
+	c.CreateSoloGame(6)
 	go func() {
 		defer func() {
 			err := c.Close()
@@ -43,80 +78,70 @@ func test2() {
 			}
 		}()
 		for {
-			err := c.ReadJSON(&c.GameData)
-			if err != nil {
-				log.Printf("Error reading JSON, %v", err)
-				//_ = c.Conn.Close()
-				continue
-			}
-			//time.Sleep(time.Millisecond * 200)
-			switch c.GameData.Status {
-			case "vote":
-				c.VotePause(game)
-			case "paused":
-				continue
-			case "normal":
-				if c.GameData.Game.Ended {
-					return
-				}
-				if c.CanPlay() {
-					log.Printf("ai %d, game %d: playing card", c.Id, 6)
-					err = c.PlayCard(game)
+			for {
+				err := c.ReadJSON(&c.GameData)
+				if err != nil {
+					log.Print("Error reading JSON")
+					err := c.Conn.Close()
 					if err != nil {
-						log.Printf("%v", err)
 						return
 					}
+					continue
 				}
-				ok, suit := c.CanSing()
-				if ok {
-					log.Printf("ai %d, game %d: singing", c.Id, 6)
-					c.Sing(suit, game)
+				time.Sleep(time.Millisecond * 200)
+				switch c.GameData.Status {
+				case "vote":
+					c.VotePause(6)
+				case "paused":
+					continue
+				case "normal":
+					if c.GameData.Game.Ended {
+						return
+					}
+					if c.CanPlay() {
+						log.Printf("ai %d, game %d: playing card", c.Id, 6)
+						err = c.PlayCard()
+						if err != nil {
+							log.Printf("%v", err)
+							return
+						}
+					}
+					ok, suit := c.CanSing()
+					if ok {
+						log.Printf("ai %d, game %d: singing", c.Id, 6)
+						c.Sing(suit)
+					}
+
+					if c.CanChange() {
+						log.Printf("ai %d, game %d: changing", c.Id, 6)
+						c.ChangeCard()
+					}
 				}
 
-				if c.CanChange() {
-					log.Printf("ai %d, game %d: changing", c.Id, 6)
-					c.ChangeCard(game)
-				}
+				//b, err := json.Marshal(c.GameData)
+				//log.Printf("Client %v:Message received: %s", c.Id, b)
 			}
-
-			b, err := json.Marshal(c.GameData)
-			log.Printf("Client %v:Message received: %s", c.Id, b)
 		}
 	}()
 	time.Sleep(time.Second * 1000)
 }
 
-func test1() {
+func test4() {
 	var clients []Client
-	game := uint32(5000)
+
 	for i := 0; i < NUM_CLIENT; i++ {
 		c := Client{Id: uint32(40 + i), PairId: uint32((i % 2) + 20)}
-		c.Start(game)
+		c.Start()
 		clients = append(clients, c)
 	}
 	time.Sleep(time.Second * 1)
 
-	clients[0].CreateGame(game)
+	clients[0].CreateGame(6)
 
 	time.Sleep(time.Second * 1)
 
 	for i := 1; i < NUM_CLIENT; i++ {
-		clients[i].JoinGame(game)
-	}
-
-	time.Sleep(time.Second * 2)
-
-	clients[3].PauseGame(game)
-
-	time.Sleep(time.Second * 2)
-
-	clients[0].VotePause(game)
-
-	// Game is paused
-	time.Sleep(time.Second * 2)
-	for _, c := range clients {
-		c.JoinGame(game)
-		time.Sleep(time.Second * 1)
+		clients[i].JoinGame(6)
 	}
 
 	for {
@@ -132,7 +157,7 @@ type Client struct {
 	GameData *data.GameData
 }
 
-func (c *Client) Start(game uint32) {
+func (c *Client) Start() {
 	c.Conn = newWsConn()
 
 	err := c.WriteJSON(&c)
@@ -163,26 +188,28 @@ func (c *Client) Start(game uint32) {
 				time.Sleep(time.Millisecond * 200)
 				switch c.GameData.Status {
 				case "vote":
-					c.VotePause(game)
+					c.VotePause(6)
 				case "paused":
 					continue
 				case "normal":
 					if c.GameData.Game.Ended {
+						log.Printf("client %d leaving game", c.Id)
+						c.LeaveGame(6)
 						return
 					}
 					if c.CanPlay() {
 						//log.Printf("ai %d, game %d: playing card", c.Id, c.gameId)
-						c.PlayCard(game)
+						c.PlayCard()
 					}
 					ok, suit := c.CanSing()
 					if ok {
-						log.Printf("ai %d, game %d: singing", c.Id, game)
-						c.Sing(suit, game)
+						log.Printf("ai %d, game %d: singing", c.Id, 6)
+						c.Sing(suit)
 					}
 
 					if c.CanChange() {
-						log.Printf("ai %d, game %d: changing", c.Id, game)
-						c.ChangeCard(game)
+						log.Printf("ai %d, game %d: changing", c.Id, 6)
+						c.ChangeCard()
 					}
 				}
 
@@ -242,9 +269,9 @@ func (c *Client) VotePause(game uint32) {
 	_ = c.WriteJSON(event)
 }
 
-func (c *Client) LeaveGame() {
+func (c *Client) LeaveGame(game uint32) {
 	event := events.Event{
-		GameID:    1,
+		GameID:    game,
 		PlayerID:  c.Id,
 		EventType: 2,
 	}
@@ -259,10 +286,10 @@ func (c *Client) CanPlay() bool {
 	}
 	return false
 }
-func (c *Client) PlayCard(game uint32) error {
+func (c *Client) PlayCard() error {
 	cr := c.pickBestCard()
 	e := events.Event{
-		GameID:    game,
+		GameID:    6,
 		PlayerID:  c.Id,
 		EventType: events.CARD_PLAYED,
 		Card:      cr,
@@ -278,9 +305,9 @@ func (c *Client) CanSing() (bool, string) {
 	return false, ""
 }
 
-func (c *Client) Sing(suit string, game uint32) {
+func (c *Client) Sing(suit string) {
 	e := events.Event{
-		GameID:    game,
+		GameID:    6,
 		PlayerID:  c.Id,
 		EventType: events.SING,
 		Suit:      suit,
@@ -289,9 +316,9 @@ func (c *Client) Sing(suit string, game uint32) {
 	_ = c.WriteJSON(e)
 }
 
-func (c *Client) ChangeCard(game uint32) {
+func (c *Client) ChangeCard() {
 	event := events.Event{
-		GameID:    game,
+		GameID:    6,
 		PlayerID:  c.Id,
 		EventType: events.CARD_CHANGED,
 		Changed:   true,

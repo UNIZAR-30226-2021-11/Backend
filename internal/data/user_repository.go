@@ -13,26 +13,6 @@ type UserRepository struct {
 	Data *Data
 }
 
-//// GetOne returns one user by id.
-//func (ur *UserRepository) GetOne(ctx context.Context, id uint) (user.User, error) {
-//	q := `
-//	SELECT id, username, email, location, games_won, games_lost,
-//		created_at, updated_at
-//		FROM users WHERE id = $1;
-//	`
-//
-//	row := ur.Data.DB.QueryRowContext(ctx, q, id)
-//
-//	var u user.User
-//	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Location, &u.GamesWon, &u.GamesLost,
-//		&u.CreatedAt, &u.UpdatedAt)
-//	if err != nil {
-//		return user.User{}, err
-//	}
-//
-//	return u, nil
-//}
-
 // GetByUsername returns one user by username.
 func (ur *UserRepository) GetByUsername(ctx context.Context, username string) (user.User, error) {
 	q := `
