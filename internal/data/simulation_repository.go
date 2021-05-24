@@ -309,7 +309,7 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 
 	game.HandleSing(singEvent.Suit, singEvent.HasSinged)
 
-	log.Printf("Client %v Game %v: Changed card: %v %v", singEvent.PlayerID,
+	log.Printf("Client %v Game %v: Singed suit: %v %v", singEvent.PlayerID,
 		singEvent.GameID, singEvent.Suit, singEvent.HasSinged)
 
 	sr.sendNewState(singEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
