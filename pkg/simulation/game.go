@@ -57,7 +57,6 @@ type GameState struct {
 
 	currentState int
 	CurrentRound int `json:"current_round"`
-	//CurrentPlayer uint32 `json:"current_player"`
 
 	Players *state.Ring `json:"players"`
 
@@ -501,8 +500,13 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 }
 
 // GetWinningPair returns the pairId and the points of the winning pair
-func (g *Game) GetWinningPair() (pairId uint, points int) {
-	//TODO
+func (g *Game) GetWinningPair() (pairId uint32, points int) {
+	for _, p := range g.GameState.Players.All {
+		if p.Pair == g.winnerPair {
+			return p.InternPair, g.GetTeamPoints(int(p.Pair))
+		}
+	}
+
 	return 0, 0
 }
 
