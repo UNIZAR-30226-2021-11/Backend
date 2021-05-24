@@ -87,6 +87,11 @@ func (c *Client) Listen() {
 func (c *Client) listenWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		ticker.Stop()
 		err := c.ws.Close()
 		if err != nil {
