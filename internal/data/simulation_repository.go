@@ -237,8 +237,8 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
 	game, ok := sr.games[changed.GameID]
 	if ok && game.GameState.Ended {
-		//pairId, points := game.GetWinningPair()
-		//sr.updatePairWon(pairId, true, points)
+		pairId, points := game.GetWinningPair()
+		sr.updatePairWon(pairId, true, points)
 
 		delete(sr.games, changed.GameID)
 		log.Printf("game %d ended", changed.GameID)
@@ -254,7 +254,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 }
 
 // updatePairWon updates the pair info in the API
-func (sr *SimulationRepository) updatePairWon(pairID uint, winned bool, gamePoints int) {
+func (sr *SimulationRepository) updatePairWon(pairID uint32, winned bool, gamePoints int) {
 	pair := pair.Pair{
 		Winned:     winned,
 		GamePoints: gamePoints,
