@@ -4,6 +4,7 @@ import (
 	"Backend/internal/data"
 	"Backend/pkg/events"
 	"Backend/pkg/state"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/url"
@@ -15,7 +16,8 @@ const (
 )
 
 func main() {
-	test2()
+	//test2()
+	test1()
 }
 
 func test2() {
@@ -23,6 +25,7 @@ func test2() {
 		Id:     5,
 		PairId: 2,
 	}
+	game := uint32(5000)
 
 	c.Conn = newWsConn()
 
@@ -31,7 +34,7 @@ func test2() {
 		log.Printf("error sending JSON:%v", err)
 		return
 	}
-	c.CreateSoloGame(6)
+	c.CreateSoloGame(game)
 	go func() {
 		defer func() {
 			err := c.Close()
@@ -40,49 +43,44 @@ func test2() {
 			}
 		}()
 		for {
-			for {
-				err := c.ReadJSON(&c.GameData)
-				if err != nil {
-					log.Print("Error reading JSON")
-					err := c.Conn.Close()
-					if err != nil {
-						return
-					}
-					continue
-				}
-				time.Sleep(time.Millisecond * 200)
-				switch c.GameData.Status {
-				case "vote":
-					c.VotePause(6)
-				case "paused":
-					continue
-				case "normal":
-					if c.GameData.Game.Ended {
-						return
-					}
-					if c.CanPlay() {
-						log.Printf("ai %d, game %d: playing card", c.Id, 6)
-						err = c.PlayCard()
-						if err != nil {
-							log.Printf("%v", err)
-							return
-						}
-					}
-					ok, suit := c.CanSing()
-					if ok {
-						log.Printf("ai %d, game %d: singing", c.Id, 6)
-						c.Sing(suit)
-					}
-
-					if c.CanChange() {
-						log.Printf("ai %d, game %d: changing", c.Id, 6)
-						c.ChangeCard()
-					}
-				}
-
-				//b, err := json.Marshal(c.GameData)
-				//log.Printf("Client %v:Message received: %s", c.Id, b)
+			err := c.ReadJSON(&c.GameData)
+			if err != nil {
+				log.Printf("Error reading JSON, %v", err)
+				//_ = c.Conn.Close()
+				continue
 			}
+			//time.Sleep(time.Millisecond * 200)
+			switch c.GameData.Status {
+			case "vote":
+				c.VotePause(game)
+			case "paused":
+				continue
+			case "normal":
+				if c.GameData.Game.Ended {
+					return
+				}
+				if c.CanPlay() {
+					log.Printf("ai %d, game %d: playing card", c.Id, 6)
+					err = c.PlayCard(game)
+					if err != nil {
+						log.Printf("%v", err)
+						return
+					}
+				}
+				ok, suit := c.CanSing()
+				if ok {
+					log.Printf("ai %d, game %d: singing", c.Id, 6)
+					c.Sing(suit, game)
+				}
+
+				if c.CanChange() {
+					log.Printf("ai %d, game %d: changing", c.Id, 6)
+					c.ChangeCard(game)
+				}
+			}
+
+			b, err := json.Marshal(c.GameData)
+			log.Printf("Client %v:Message received: %s", c.Id, b)
 		}
 	}()
 	time.Sleep(time.Second * 1000)
@@ -90,34 +88,34 @@ func test2() {
 
 func test1() {
 	var clients []Client
-
+	game := uint32(5000)
 	for i := 0; i < NUM_CLIENT; i++ {
 		c := Client{Id: uint32(40 + i), PairId: uint32((i % 2) + 20)}
-		c.Start()
+		c.Start(game)
 		clients = append(clients, c)
 	}
 	time.Sleep(time.Second * 1)
 
-	clients[0].CreateGame(1)
+	clients[0].CreateGame(game)
 
 	time.Sleep(time.Second * 1)
 
 	for i := 1; i < NUM_CLIENT; i++ {
-		clients[i].JoinGame(1)
+		clients[i].JoinGame(game)
 	}
 
 	time.Sleep(time.Second * 2)
 
-	clients[3].PauseGame(1)
+	clients[3].PauseGame(game)
 
 	time.Sleep(time.Second * 2)
 
-	clients[0].VotePause(1)
+	clients[0].VotePause(game)
 
 	// Game is paused
 	time.Sleep(time.Second * 2)
 	for _, c := range clients {
-		c.JoinGame(1)
+		c.JoinGame(game)
 		time.Sleep(time.Second * 1)
 	}
 
@@ -134,7 +132,7 @@ type Client struct {
 	GameData *data.GameData
 }
 
-func (c *Client) Start() {
+func (c *Client) Start(game uint32) {
 	c.Conn = newWsConn()
 
 	err := c.WriteJSON(&c)
@@ -165,7 +163,7 @@ func (c *Client) Start() {
 				time.Sleep(time.Millisecond * 200)
 				switch c.GameData.Status {
 				case "vote":
-					c.VotePause(6)
+					c.VotePause(game)
 				case "paused":
 					continue
 				case "normal":
@@ -174,17 +172,17 @@ func (c *Client) Start() {
 					}
 					if c.CanPlay() {
 						//log.Printf("ai %d, game %d: playing card", c.Id, c.gameId)
-						c.PlayCard()
+						c.PlayCard(game)
 					}
 					ok, suit := c.CanSing()
 					if ok {
-						log.Printf("ai %d, game %d: singing", c.Id, 6)
-						c.Sing(suit)
+						log.Printf("ai %d, game %d: singing", c.Id, game)
+						c.Sing(suit, game)
 					}
 
 					if c.CanChange() {
-						log.Printf("ai %d, game %d: changing", c.Id, 6)
-						c.ChangeCard()
+						log.Printf("ai %d, game %d: changing", c.Id, game)
+						c.ChangeCard(game)
 					}
 				}
 
@@ -261,10 +259,10 @@ func (c *Client) CanPlay() bool {
 	}
 	return false
 }
-func (c *Client) PlayCard() error {
+func (c *Client) PlayCard(game uint32) error {
 	cr := c.pickBestCard()
 	e := events.Event{
-		GameID:    6,
+		GameID:    game,
 		PlayerID:  c.Id,
 		EventType: events.CARD_PLAYED,
 		Card:      cr,
@@ -280,9 +278,9 @@ func (c *Client) CanSing() (bool, string) {
 	return false, ""
 }
 
-func (c *Client) Sing(suit string) {
+func (c *Client) Sing(suit string, game uint32) {
 	e := events.Event{
-		GameID:    6,
+		GameID:    game,
 		PlayerID:  c.Id,
 		EventType: events.SING,
 		Suit:      suit,
@@ -291,9 +289,9 @@ func (c *Client) Sing(suit string) {
 	_ = c.WriteJSON(e)
 }
 
-func (c *Client) ChangeCard() {
+func (c *Client) ChangeCard(game uint32) {
 	event := events.Event{
-		GameID:    6,
+		GameID:    game,
 		PlayerID:  c.Id,
 		EventType: events.CARD_CHANGED,
 		Changed:   true,

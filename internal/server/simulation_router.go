@@ -100,6 +100,7 @@ func (sr *SimulationRouter) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	}
 	client.Done()
 	delete(sr.clients, clientID)
+	log.Printf("Client %d disconnected", clientID)
 }
 
 func (sr *SimulationRouter) HandleUserJoined(userJoinedEvent *events.UserJoined) {

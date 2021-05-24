@@ -78,6 +78,7 @@ func (sr *SimulationRepository) HandleGameCreate(gameCreateEvent *events.GameCre
 }
 
 func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoined) {
+	log.Printf("User %d trying to join game %d\n", userJoinedEvent.PlayerID, userJoinedEvent.GameID)
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
 		Id:   userJoinedEvent.PlayerID,
@@ -114,7 +115,7 @@ func (sr *SimulationRepository) restartGame(game *simulation.Game, gameId uint32
 	delete(sr.pausedGames, gameId)
 	delete(sr.futureGames, gameId)
 
-	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	sr.sendNewState(gameId, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
@@ -135,7 +136,7 @@ func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uin
 
 	log.Printf("Game %v: Triumph is %v", gameId, game.GameState.TriumphCard.Suit)
 
-	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	sr.sendNewState(gameId, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) startSingleGame(player *state.Player, gameId uint32) {
@@ -152,7 +153,7 @@ func (sr *SimulationRepository) HandleGamePause(gamePauseEvent *events.GamePause
 	}
 
 	opponents := game.GetOpponentsID(gamePauseEvent.PlayerID)
-	sr.sendNewState(game.GameState, STATUS_VOTE, opponents)
+	sr.sendNewState(gamePauseEvent.GameID, game.GameState, STATUS_VOTE, opponents)
 }
 
 func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause) {
@@ -165,7 +166,7 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 
 	if votePauseEvent.Vote {
 		// Let players know game is paused
-		sr.sendNewState(game.GameState, STATUS_PAUSED, game.GetPlayersID())
+		sr.sendNewState(votePauseEvent.GameID, game.GameState, STATUS_PAUSED, game.GetPlayersID())
 
 		// Save the current game state
 		sr.pausedGames[gameId] = game
@@ -179,16 +180,16 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
 
-	gid := userLeftEvent.GameID
-	pid := userLeftEvent.PlayerID
-	pairID := userLeftEvent.PairID
-	_, ok := sr.games[gid]
-	if !ok {
-		log.Printf("Game %d not found\n", gid)
-		return
-	}
-	a := ai.Create(pid, pairID, gid)
-	a.TakeOver()
+	//gid := userLeftEvent.GameID
+	//pid := userLeftEvent.PlayerID
+	//pairID := userLeftEvent.PairID
+	//_, ok := sr.games[gid]
+	//if !ok {
+	//	log.Printf("Game %d not found\n", gid)
+	//	return
+	//}
+	//a := ai.Create(pid, pairID, gid)
+	//a.TakeOver()
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
@@ -202,7 +203,7 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 
 	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
 
-	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	sr.sendNewState(cardPlayedEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
@@ -234,7 +235,7 @@ func (sr *SimulationRepository) HandleCardChanged(cardChangedEvent *events.CardC
 	log.Printf("Client %v Game %v: Changed card: %v", cardChangedEvent.PlayerID,
 		cardChangedEvent.GameID, cardChangedEvent.Changed)
 
-	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	sr.sendNewState(cardChangedEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
@@ -249,10 +250,10 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 	log.Printf("Client %v Game %v: Changed card: %v %v", singEvent.PlayerID,
 		singEvent.GameID, singEvent.Suit, singEvent.HasSinged)
 
-	sr.sendNewState(game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	sr.sendNewState(singEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
-func (sr *SimulationRepository) sendNewState(game simulation.GameState,
+func (sr *SimulationRepository) sendNewState(gameId uint32, game simulation.GameState,
 	status string, clients []uint32) {
 	gameData := &GameData{
 		Status: status,
@@ -262,6 +263,7 @@ func (sr *SimulationRepository) sendNewState(game simulation.GameState,
 	event := &events.StateChanged{
 		ClientsID: clients,
 		GameData:  gameData,
+		GameID:    gameId,
 	}
 	sr.eventDispatcher.FireStateChanged(event)
 }

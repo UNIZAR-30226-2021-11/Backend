@@ -71,13 +71,13 @@ func (c *Client) handleEvents() {
 	defer func() {
 		err := c.Conn.Close()
 		if err != nil {
-			log.Printf("%v", err)
+			log.Printf("ai error while closing WS:%v", err)
 		}
 	}()
 	for {
 		err := c.ReadJSON(&c.GameData)
 		if err != nil {
-			log.Print("Error reading JSON")
+			log.Print("ai error reading JSON")
 			err := c.Conn.Close()
 			if err != nil {
 				return

@@ -55,7 +55,8 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 		ws:     ws,
 		ch:     ch,
 		doneCh: doneCh,
-		sr:     sr}
+		sr:     sr,
+	}
 }
 
 // Conn returns client's websocket.Conn struct.
