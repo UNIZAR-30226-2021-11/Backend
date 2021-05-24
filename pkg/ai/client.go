@@ -58,10 +58,11 @@ func (c *Client) Start() {
 
 // TakeOver establish a WS conn and start handling events instead of the player
 func (c *Client) TakeOver() {
+	log.Printf("ai %s taking over player %d", c.P.UserName, c.Id)
 	c.Conn = newWsConn()
 	err := c.WriteJSON(&c)
 	if err != nil {
-		log.Printf("error sending JSON:%v", err)
+		log.Printf("ai error sending JSON:%v", err)
 		return
 	}
 	go c.handleEvents()
@@ -76,6 +77,7 @@ func (c *Client) handleEvents() {
 	}()
 	for {
 		err := c.ReadJSON(&c.GameData)
+
 		if err != nil {
 			log.Print("ai error reading JSON")
 			err := c.Conn.Close()
@@ -92,7 +94,7 @@ func (c *Client) handleEvents() {
 			continue
 		case "normal":
 			if c.GameData.Game.Ended {
-				log.Printf("ai %d, game %d: leaving", c.Id, c.gameId)
+				//log.Printf("ai %d, game %d: leaving", c.Id, c.gameId)
 				return
 			}
 			if c.CanPlay() {
@@ -101,12 +103,12 @@ func (c *Client) handleEvents() {
 			}
 			ok, suit := c.CanSing()
 			if ok {
-				log.Printf("ai %d, game %d: singing", c.Id, c.gameId)
+				//log.Printf("ai %d, game %d: singing", c.Id, c.gameId)
 				c.Sing(suit)
 			}
 
 			if c.CanChange() {
-				log.Printf("ai %d, game %d: changing", c.Id, c.gameId)
+				//log.Printf("ai %d, game %d: changing", c.Id, c.gameId)
 				c.ChangeCard()
 			}
 		}
@@ -117,6 +119,7 @@ func (c *Client) handleEvents() {
 }
 
 func (c *Client) JoinGame(game uint32) {
+	//log.Printf("ai %s joining game %d", c.P.UserName, game)
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,

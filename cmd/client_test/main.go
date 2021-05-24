@@ -144,9 +144,16 @@ func test4() {
 		clients[i].JoinGame(6)
 	}
 
+	time.Sleep(time.Second * 5)
+	clients[2].LeaveGame(6)
+	time.Sleep(time.Second * 5)
+	clients[2].JoinGame(6)
 	for {
 		//Guarrisimo
 		time.Sleep(time.Second * 5)
+		clients[2].LeaveGame(6)
+		time.Sleep(time.Second * 5)
+		clients[2].JoinGame(6)
 	}
 }
 
@@ -270,6 +277,8 @@ func (c *Client) VotePause(game uint32) {
 }
 
 func (c *Client) LeaveGame(game uint32) {
+	c.Conn.Close()
+	return
 	event := events.Event{
 		GameID:    game,
 		PlayerID:  c.Id,
