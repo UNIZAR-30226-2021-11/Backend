@@ -25,6 +25,7 @@ type SimulationRepository struct {
 	futureGames     map[uint32][]*state.Player
 	pausedGames     map[uint32]*simulation.Game
 	games           map[uint32]*simulation.Game
+	ais             map[uint32]struct{}
 }
 
 type GameData struct {
@@ -38,6 +39,7 @@ func NewSimulationRepository(eventDispatcher *events.EventDispatcher) *Simulatio
 		futureGames:     make(map[uint32][]*state.Player),
 		games:           make(map[uint32]*simulation.Game),
 		pausedGames:     make(map[uint32]*simulation.Game),
+		ais:             make(map[uint32]struct{}),
 	}
 }
 
@@ -185,17 +187,22 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 
 func (sr *SimulationRepository) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	//TODO: change user by IA
-
-	//gid := userLeftEvent.GameID
-	//pid := userLeftEvent.PlayerID
-	//pairID := userLeftEvent.PairID
-	//_, ok := sr.games[gid]
-	//if !ok {
-	//	log.Printf("Game %d not found\n", gid)
-	//	return
-	//}
-	//a := ai.Create(pid, pairID, gid)
-	//a.TakeOver()
+	log.Printf("UserLeft %v", userLeftEvent.PlayerID)
+	gid := userLeftEvent.GameID
+	pid := userLeftEvent.PlayerID
+	pairID := userLeftEvent.PairID
+	game, ok := sr.games[gid]
+	if !ok {
+		log.Printf("Game %d not found\n", gid)
+		return
+	}
+	_, aiExist := sr.ais[pid]
+	if !aiExist {
+		sr.ais[pid] = struct{}{}
+		a := ai.Create(pid, pairID, gid)
+		go a.TakeOver()
+		sr.sendNewState(gid, game.GameState, STATUS_NORMAL, game.GetPlayersID())
+	}
 }
 
 func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPlayed) {
@@ -225,6 +232,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 				GameID:   changed.GameID,
 				PairID:   0,
 			})
+			delete(sr.ais, p)
 		}
 	}
 }
@@ -293,6 +301,7 @@ func (sr *SimulationRepository) HandleSing(singEvent *events.Sing) {
 }
 
 func (sr *SimulationRepository) sendNewState(gameId uint32, game simulation.GameState,
+
 	status string, clients []uint32) {
 	gameData := &GameData{
 		Status: status,

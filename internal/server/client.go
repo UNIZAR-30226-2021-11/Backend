@@ -94,10 +94,10 @@ func (c *Client) listenWrite() {
 			GameID:   c.gameID,
 		})
 		ticker.Stop()
-		err := c.ws.Close()
-		if err != nil {
-			log.Println("Error:", err.Error())
-		}
+		_ = c.ws.Close()
+		//if err != nil {
+		//	log.Println("Error:", err.Error())
+		//}
 	}()
 
 	log.Println("Listening write to client")
