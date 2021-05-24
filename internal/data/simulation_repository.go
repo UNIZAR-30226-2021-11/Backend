@@ -16,7 +16,7 @@ import (
 
 const (
 	STATUS_NORMAL = "normal"
-	STATUS_VOTE   = "vote"
+	STATUS_VOTE   = "votePause"
 	STATUS_PAUSED = "paused"
 )
 

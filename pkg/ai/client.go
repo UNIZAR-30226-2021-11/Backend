@@ -88,7 +88,7 @@ func (c *Client) handleEvents() {
 		}
 		time.Sleep(time.Millisecond * 200)
 		switch c.GameData.Status {
-		case "vote":
+		case "votePause":
 			c.VotePause()
 		case "paused":
 			continue
