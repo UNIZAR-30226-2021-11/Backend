@@ -237,7 +237,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 	}
 }
 
-//TODO: call from where appropiate
+//TODO: call from where appropriate
 // updatePairWon updates the pair info in the API
 func (sr *SimulationRepository) updatePairWon(pairID uint, winned bool, gamePoints int) {
 	pair := pair.Pair{
