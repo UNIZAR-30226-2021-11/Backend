@@ -8,7 +8,7 @@ import (
 type Player struct {
 	Cards      [6]*Card `json:"cards"`
 	cardCount  int
-	internPair int
+	InternPair uint32
 	Id         uint32 `json:"id"`
 	Pair       uint32 `json:"pair"`
 	UserName   string `json:"username"`

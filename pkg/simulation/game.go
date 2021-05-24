@@ -500,6 +500,12 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 	return ids
 }
 
+// GetWinningPair returns the pairId and the points of the winning pair
+func (g *Game) GetWinningPair() (pairId uint, points int) {
+	//TODO
+	return 0, 0
+}
+
 // GetTeamPoints returns points for a team, even returns Team A, odd Team B
 func (g *Game) GetTeamPoints(team int) (points int) {
 	if team%2 == 0 {

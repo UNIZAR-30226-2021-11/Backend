@@ -88,8 +88,8 @@ func (sr *SimulationRepository) HandleUserJoined(userJoinedEvent *events.UserJoi
 	log.Printf("User %d trying to join game %d\n", userJoinedEvent.PlayerID, userJoinedEvent.GameID)
 	gameId := userJoinedEvent.GameID
 	player := &state.Player{
-		Id:   userJoinedEvent.PlayerID,
-		Pair: userJoinedEvent.PairID,
+		Id:         userJoinedEvent.PlayerID,
+		InternPair: userJoinedEvent.PairID,
 	}
 	players, ok := sr.futureGames[gameId]
 	if !ok {
@@ -126,10 +126,10 @@ func (sr *SimulationRepository) restartGame(game *simulation.Game, gameId uint32
 }
 
 func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
-	firstPair := players[0].Pair
+	firstPair := players[0].InternPair
 
 	for _, player := range players {
-		if player.Pair != firstPair {
+		if player.InternPair != firstPair {
 			player.Pair = 2
 		} else {
 			player.Pair = 1
