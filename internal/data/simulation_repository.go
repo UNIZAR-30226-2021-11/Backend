@@ -198,6 +198,8 @@ func (sr *SimulationRepository) HandleVotePause(votePauseEvent *events.VotePause
 		// For rejoining the game
 		var players []*state.Player
 		sr.futureGames[gameId] = players
+	} else {
+		sr.sendNewState(votePauseEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 	}
 }
 
