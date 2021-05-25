@@ -247,7 +247,7 @@ func (g *Game) checkRoundWinner() {
 	winner := g.rounds[g.currentRound].GetWinner()
 
 	g.winnerLastRound = winner
-	g.GameState.WinnerPair = winner.Pair
+	g.GameState.WinnerPair = winner.InternPair
 }
 
 func (g *Game) updatePoints() {
