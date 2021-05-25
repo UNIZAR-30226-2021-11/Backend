@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -126,17 +127,32 @@ func (sr *SimulationRepository) restartGame(game *simulation.Game, gameId uint32
 }
 
 func (sr *SimulationRepository) startNewGame(players []*state.Player, gameId uint32) {
+	var newPlayers [4]*state.Player
 	firstPair := players[0].InternPair
+	counter1 := 0
+	counter2 := 0
 
 	for _, player := range players {
 		if player.InternPair != firstPair {
 			player.Pair = 2
+			counter2++
+			if counter2 == 1 {
+				newPlayers[1] = player
+			} else {
+				newPlayers[3] = player
+			}
 		} else {
 			player.Pair = 1
+			counter1++
+			if counter1 == 1 {
+				newPlayers[0] = player
+			} else {
+				newPlayers[2] = player
+			}
 		}
 	}
 
-	game := simulation.NewGame(players)
+	game := simulation.NewGame(newPlayers[:])
 
 	sr.games[gameId] = game
 	delete(sr.futureGames, gameId)
@@ -222,7 +238,8 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
 	game, ok := sr.games[changed.GameID]
 	if ok && game.GameState.Ended {
-		// TODO llamada a la api
+		pairId, points := game.GetWinningPair()
+		sr.updatePairWon(pairId, true, points)
 
 		delete(sr.games, changed.GameID)
 		log.Printf("game %d ended", changed.GameID)
@@ -237,9 +254,8 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 	}
 }
 
-//TODO: call from where appropriate
 // updatePairWon updates the pair info in the API
-func (sr *SimulationRepository) updatePairWon(pairID uint, winned bool, gamePoints int) {
+func (sr *SimulationRepository) updatePairWon(pairID uint32, winned bool, gamePoints int) {
 	pair := pair.Pair{
 		Winned:     winned,
 		GamePoints: gamePoints,
@@ -253,7 +269,8 @@ func (sr *SimulationRepository) updatePairWon(pairID uint, winned bool, gamePoin
 	if err != nil {
 		panic(err)
 	}
-	url := "http://localhost:9000/api/v1/pairs/" + strconv.Itoa(int(pairID))
+	port := os.Getenv("PORT")
+	url := "http://localhost:" + port + "/api/v1/pairs/" + strconv.Itoa(int(pairID))
 	// set the HTTP method, url, and request body
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(json))
 	if err != nil {
