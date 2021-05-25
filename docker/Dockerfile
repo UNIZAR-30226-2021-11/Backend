@@ -10,7 +10,7 @@ RUN go build -o /backend cmd/backend/main.go
 
 FROM debian:jessie
 COPY --from=builder /backend /
-COPY --from=builder /database/models.sql /database/models.sql
+COPY --from=builder /database/models.sql /usr/local/go/src/Backend/database/models.sql
 ENV PORT="11050"
 ENV DATABASE_URI="postgres://javiadmin:javiadmin@127.0.0.1:11000/guinote?sslmode=disable"
 CMD /backend
