@@ -6,10 +6,8 @@ import (
 	"Backend/pkg/state"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/joho/godotenv"
 	"log"
 	"net/url"
-	"os"
 	"time"
 )
 
@@ -284,10 +282,10 @@ func (c *Client) roundPoints() int {
 }
 
 func newWsConn() *websocket.Conn {
-	godotenv.Load(".env")
-	port := os.Getenv("PORT")
-	host := os.Getenv("HOST")
-	u := url.URL{Scheme: "ws", Host: host + ":" + port, Path: "/simulation"}
+	//godotenv.Load(".env")
+	//port := os.Getenv("PORT")
+	//host := os.Getenv("HOST")
+	u := url.URL{Scheme: "ws", Host: ":11000", Path: "/simulation"}
 
 	// Establish connection
 	c, _, _ := websocket.DefaultDialer.Dial(u.String(), nil)
