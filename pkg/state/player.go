@@ -8,7 +8,7 @@ import (
 type Player struct {
 	Cards      [6]*Card `json:"cards"`
 	cardCount  int
-	internPair int
+	InternPair uint32
 	Id         uint32 `json:"id"`
 	Pair       uint32 `json:"pair"`
 	UserName   string `json:"username"`
@@ -148,7 +148,14 @@ func (p *Player) PickCard(card int) (c *Card) {
 
 // GetCards return the non-nil cards
 func (p *Player) GetCards() []*Card {
-	return p.Cards[0:p.cardCount]
+	var cs []*Card
+	for _, c := range p.Cards {
+		if c != nil {
+			cs = append(cs, c)
+		}
+	}
+
+	return cs
 }
 
 // SetPlay changes if this player can play.

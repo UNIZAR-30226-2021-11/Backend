@@ -33,8 +33,8 @@ func NewRound(triumph string) *round {
 // GetWinner returns the round winner
 func (r *round) GetWinner() (p *cardPlayed) {
 	if r.pos != 3 {
-		// TODO QUITAR
-		panic(1)
+		return nil
+		//panic(1)
 	}
 	if err := r.checkWinner(); err != nil {
 		panic(1)
@@ -166,7 +166,9 @@ func (r *round) CanPlayCards(arrastre bool, cs []*state.Card) {
 
 func setPlayable(playable bool, cards []*state.Card) {
 	for _, c := range cards {
-		c.AllowPlay(playable)
+		if c != nil {
+			c.AllowPlay(playable)
+		}
 	}
 }
 

@@ -35,10 +35,13 @@ func NewSimulationRouter() *SimulationRouter {
 	}
 
 	eventDispatcher.RegisterStateChangedListener(sr)
+	eventDispatcher.RegisterStateChangedListener(sr.simulationRepository)
 	eventDispatcher.RegisterGameCreateListener(sr.simulationRepository)
+	eventDispatcher.RegisterSingleGameCreateListener(sr.simulationRepository)
 	eventDispatcher.RegisterGamePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterVotePauseListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserJoinedListener(sr.simulationRepository)
+	eventDispatcher.RegisterUserJoinedListener(sr)
 	eventDispatcher.RegisterUserLeftListener(sr.simulationRepository)
 	eventDispatcher.RegisterUserLeftListener(sr)
 	eventDispatcher.RegisterCardPlayedListener(sr.simulationRepository)
@@ -74,6 +77,13 @@ func (sr *SimulationRouter) SendToClient(clientID uint32, data interface{}) {
 	}
 }
 
+func (sr *SimulationRouter) AddGameToClient(clientID uint32, gameID uint32) {
+	client, ok := sr.clients[clientID]
+	if ok {
+		client.gameID = gameID
+	}
+}
+
 func (sr *SimulationRouter) HandleStateChanged(stateChangedEvent *events.StateChanged) {
 	clientsID := stateChangedEvent.ClientsID
 	for _, c := range clientsID {
@@ -90,4 +100,15 @@ func (sr *SimulationRouter) HandleUserLeft(userLeftEvent *events.UserLeft) {
 	}
 	client.Done()
 	delete(sr.clients, clientID)
+	log.Printf("Client %d disconnected", clientID)
+}
+
+func (sr *SimulationRouter) HandleUserJoined(userJoinedEvent *events.UserJoined) {
+	clientID := userJoinedEvent.PlayerID
+	client, ok := sr.clients[clientID]
+	if !ok {
+		log.Printf("Client %d not found\n", clientID)
+		return
+	}
+	client.gameID = userJoinedEvent.GameID
 }

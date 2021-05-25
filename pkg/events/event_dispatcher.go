@@ -26,6 +26,10 @@ type GameCreateListener interface {
 	HandleGameCreate(*GameCreate)
 }
 
+type SingleGameCreateListener interface {
+	HandleSingleGameCreate(*SingleGameCreate)
+}
+
 type GamePauseListener interface {
 	HandleGamePause(*GamePause)
 }
@@ -89,6 +93,17 @@ type gameCreateHandler struct {
 func (handler *gameCreateHandler) handle() {
 	for _, listener := range handler.eventListeners {
 		listener.HandleGameCreate(handler.event)
+	}
+}
+
+type singleGameCreateHandler struct {
+	event          *SingleGameCreate
+	eventListeners []SingleGameCreateListener
+}
+
+func (handler *singleGameCreateHandler) handle() {
+	for _, listener := range handler.eventListeners {
+		listener.HandleSingleGameCreate(handler.event)
 	}
 }
 
@@ -184,6 +199,8 @@ type EventDispatcher struct {
 
 	gameCreateListeners []GameCreateListener
 
+	singleGameCreateListeners []SingleGameCreateListener
+
 	gamePauseListeners []GamePauseListener
 
 	votePauseListeners []VotePauseListener
@@ -214,6 +231,8 @@ func NewEventDispatcher() *EventDispatcher {
 		stateChangedListeners: []StateChangedListener{},
 
 		gameCreateListeners: []GameCreateListener{},
+
+		singleGameCreateListeners: []SingleGameCreateListener{},
 
 		gamePauseListeners: []GamePauseListener{},
 
@@ -298,6 +317,23 @@ func (dispatcher *EventDispatcher) FireGameCreate(event *GameCreate) {
 	handler := &gameCreateHandler{
 		event:          event,
 		eventListeners: dispatcher.gameCreateListeners,
+	}
+
+	dispatcher.priority2EventsQueue <- handler
+}
+
+// SingleGameCreate
+
+func (dispatcher *EventDispatcher) RegisterSingleGameCreateListener(listener SingleGameCreateListener) {
+	dispatcher.panicWhenEventLoopRunning()
+
+	dispatcher.singleGameCreateListeners = append(dispatcher.singleGameCreateListeners, listener)
+}
+
+func (dispatcher *EventDispatcher) FireSingleGameCreate(event *SingleGameCreate) {
+	handler := &singleGameCreateHandler{
+		event:          event,
+		eventListeners: dispatcher.singleGameCreateListeners,
 	}
 
 	dispatcher.priority2EventsQueue <- handler

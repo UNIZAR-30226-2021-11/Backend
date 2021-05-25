@@ -3,6 +3,7 @@ package simulation
 import (
 	"Backend/pkg/state"
 	"encoding/json"
+	"log"
 	"testing"
 )
 
@@ -341,9 +342,17 @@ func TestPlayAllRounds(t *testing.T) {
 			g.HandleCardPlayed(c)
 			cardsPlayed = append(cardsPlayed, c)
 		}
+		if g.pairCanSing {
+			g.HandleSing("", false)
+		}
 		if g.pairCanSwapCard {
 			g.HandleChangedCard(false)
 		}
+		t.Run("correct round", func(t *testing.T) {
+			if g.GameState.CurrentRound != rs+1 && rs != 9 {
+				t.Errorf("got %v, want %v", g.GameState.CurrentRound, rs+1)
+			}
+		})
 		t.Run("dealed distinct cards", func(t *testing.T) {
 			checkDistinctCards(t, g)
 		})
@@ -438,6 +447,31 @@ func TestInitialCardDealing(t *testing.T) {
 	})
 }
 
+func TestGame_HandleChangedCard(t *testing.T) {
+	ps := createTestPlayers()
+	g := NewTestGame(ps)
+	ps[0].Cards[5] = state.CreateCard(g.GameState.TriumphCard.Suit, 7)
+
+	log.Printf("jeje %v", g)
+	for i := 0; i < 4; i++ {
+		c := g.GameState.Players.Current().PickCard(0)
+		g.HandleCardPlayed(c)
+	}
+	t.Log()
+	t.Run("no player can play card", func(t *testing.T) {
+		for _, p := range ps {
+			if p.CanPlay {
+				t.Errorf("player %d, can play", p.Id)
+			}
+		}
+	})
+
+	t.Run("player 1 should be able to change", func(t *testing.T) {
+		if !ps[0].CanChange {
+			t.Errorf("cannot change")
+		}
+	})
+}
 func createTestPlayers() []*state.Player {
 	var players []*state.Player
 	for i := 0; i < 4; i++ {
@@ -461,4 +495,45 @@ func sumPoints(rs [10]*round) (sum int) {
 		sum += r.points
 	}
 	return sum
+}
+
+func NewTestGame(p []*state.Player) (g *Game) {
+	var s Sings
+	s.initialize()
+	r := state.NewPlayerRing(p)
+	sings := make(map[string]bool)
+	sings[state.SUIT1] = false
+	sings[state.SUIT2] = false
+	sings[state.SUIT3] = false
+	sings[state.SUIT4] = false
+
+	g = &Game{
+		currentRound: 0,
+		deck:         state.NewDeck(),
+		GameState: GameState{
+			PointsTeamA:  0,
+			PointsTeamB:  0,
+			PointsSingA:  0,
+			PointsSingB:  0,
+			currentState: 0,
+			CurrentRound: 0,
+			Vueltas:      false,
+			Players:      r,
+		},
+		sings: s,
+	}
+	//g.deck.Shuffle()
+
+	// Set first player and deal initial cards
+	g.GameState.Players.SetFirstPlayer(p[0])
+	g.GameState.TriumphCard = g.deck.GetTriumphCard()
+	// Creates the first round
+	g.rounds[0] = NewRound(g.deck.GetTriumph())
+	g.initialCardDealing()
+
+	for _, player := range g.GameState.Players.All {
+		g.rounds[0].CanPlayCards(g.GameState.Arrastre, player.GetCards())
+	}
+	g.GameState.currentState = t1
+	return g
 }

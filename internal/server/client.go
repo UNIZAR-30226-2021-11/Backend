@@ -4,13 +4,27 @@ import (
 	"Backend/pkg/events"
 	"github.com/gorilla/websocket"
 	"log"
+	"time"
 )
 
-const channelBufSize = 100
+const (
+	channelBufSize = 100
+
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 6 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+)
 
 // Client struct holds client-specific variables.
 type Client struct {
 	ID     uint32 `json:"player_id,omitempty"`
+	pairID uint32
+	gameID uint32
 	ws     *websocket.Conn
 	ch     chan interface{}
 	doneCh chan bool
@@ -24,7 +38,7 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 	}
 
 	ch := make(chan interface{}, channelBufSize)
-	doneCh := make(chan bool)
+	doneCh := make(chan bool, channelBufSize)
 
 	player := struct {
 		Id     uint32 `json:"player_id,omitempty"`
@@ -35,7 +49,14 @@ func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 		log.Print("Error reading player ID")
 	}
 
-	return &Client{player.Id, ws, ch, doneCh, sr}
+	return &Client{
+		ID:     player.Id,
+		pairID: player.PairId,
+		ws:     ws,
+		ch:     ch,
+		doneCh: doneCh,
+		sr:     sr,
+	}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -65,11 +86,18 @@ func (c *Client) Listen() {
 
 // Listen write request via chanel
 func (c *Client) listenWrite() {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		err := c.ws.Close()
-		if err != nil {
-			log.Println("Error:", err.Error())
-		}
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
+		ticker.Stop()
+		_ = c.ws.Close()
+		//if err != nil {
+		//	log.Println("Error:", err.Error())
+		//}
 	}()
 
 	log.Println("Listening write to client")
@@ -88,6 +116,12 @@ func (c *Client) listenWrite() {
 				//c.sr.monitor.AddSendTime(elapsed)
 			}
 
+		case <-ticker.C:
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
+
 		case <-c.doneCh:
 			c.doneCh <- true
 			return
@@ -97,11 +131,19 @@ func (c *Client) listenWrite() {
 
 func (c *Client) listenRead() {
 	defer func() {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		err := c.ws.Close()
 		if err != nil {
 			log.Println("Error:", err.Error())
 		}
 	}()
+
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	log.Println("Listening read from client")
 	for {
@@ -121,10 +163,14 @@ func (c *Client) readFromWebSocket() {
 	var event events.Event
 	err := c.ws.ReadJSON(&event)
 	if err != nil {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		log.Println(err)
 
 		c.doneCh <- true
-		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{PlayerID: c.ID})
 	} else {
 		c.unmarshalUserInput(event)
 	}
@@ -138,8 +184,17 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 			PlayerID: event.PlayerID,
 			PairID:   event.PairID,
 			GameID:   event.GameID,
+			UserName: event.UserName,
 		}
 		c.sr.EventsDispatcher.FireGameCreate(e)
+
+	case events.SINGLE_GAME_CREATE:
+		e := &events.SingleGameCreate{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			UserName: event.UserName,
+		}
+		c.sr.EventsDispatcher.FireSingleGameCreate(e)
 
 	case events.GAME_PAUSE:
 		e := &events.GamePause{
@@ -169,6 +224,7 @@ func (c *Client) unmarshalUserInput(event events.Event) {
 		e := &events.UserLeft{
 			PlayerID: event.PlayerID,
 			GameID:   event.GameID,
+			PairID:   event.PairID,
 		}
 		c.sr.EventsDispatcher.FireUserLeft(e)
 

@@ -3,14 +3,15 @@ package events
 import "Backend/pkg/state"
 
 const (
-	GAME_CREATE  = 0
-	USER_JOINED  = 1
-	USER_LEFT    = 2
-	CARD_PLAYED  = 3
-	CARD_CHANGED = 4
-	SING         = 5
-	GAME_PAUSE   = 6
-	VOTE_PAUSE   = 7
+	GAME_CREATE        = 0
+	USER_JOINED        = 1
+	USER_LEFT          = 2
+	CARD_PLAYED        = 3
+	CARD_CHANGED       = 4
+	SING               = 5
+	GAME_PAUSE         = 6
+	VOTE_PAUSE         = 7
+	SINGLE_GAME_CREATE = 8
 )
 
 // Event is a generic event communication
