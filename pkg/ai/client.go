@@ -286,7 +286,8 @@ func (c *Client) roundPoints() int {
 func newWsConn() *websocket.Conn {
 	godotenv.Load(".env")
 	port := os.Getenv("PORT")
-	u := url.URL{Scheme: "ws", Host: ":" + port, Path: "/simulation"}
+	host := os.Getenv("HOST")
+	u := url.URL{Scheme: "ws", Host: host + ":" + port, Path: "/simulation"}
 
 	// Establish connection
 	c, _, _ := websocket.DefaultDialer.Dial(u.String(), nil)
