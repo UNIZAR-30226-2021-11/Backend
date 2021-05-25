@@ -295,6 +295,9 @@ func (g *Game) updateSings() {
 
 func (g *Game) updateChange() {
 	g.pairCanSwapCard = false
+	if g.GameState.Arrastre {
+		return
+	}
 	for _, p := range g.GameState.Players.All {
 		// Pair won round
 		if p.Pair == g.winnerLastRound.Pair {
@@ -467,6 +470,10 @@ func (g *Game) checkWinner() bool {
 // Handlers
 
 func (g *Game) HandleCardPlayed(card *state.Card) {
+	if card == nil {
+		log.Printf("card played is nil")
+		return
+	}
 	g.processCard(card)
 }
 

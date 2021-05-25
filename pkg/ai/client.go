@@ -109,7 +109,7 @@ func (c *Client) handleEvents() {
 
 			if c.CanChange() {
 				//log.Printf("ai %d, game %d: changing", c.Id, c.gameId)
-				c.ChangeCard()
+				c.ChangeCard(false)
 			}
 		}
 
@@ -164,12 +164,12 @@ func (c *Client) Sing(suit string) {
 	_ = c.WriteJSON(e)
 }
 
-func (c *Client) ChangeCard() {
+func (c *Client) ChangeCard(change bool) {
 	event := events.Event{
 		GameID:    c.gameId,
 		PlayerID:  c.Id,
 		EventType: events.CARD_CHANGED,
-		Changed:   true,
+		Changed:   change,
 	}
 	_ = c.WriteJSON(event)
 }
