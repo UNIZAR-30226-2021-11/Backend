@@ -22,7 +22,7 @@ const (
 func main() {
 	//test3()
 	//test2()
-	test4()
+	test5()
 }
 
 func test3() {
@@ -144,16 +144,52 @@ func test4() {
 		clients[i].JoinGame(6)
 	}
 
-	time.Sleep(time.Second * 5)
-	clients[2].LeaveGame(6)
-	time.Sleep(time.Second * 5)
-	clients[2].JoinGame(6)
+	//time.Sleep(time.Second * 5)
+	//clients[2].LeaveGame(6)
+	//time.Sleep(time.Second * 5)
+	//clients[2].JoinGame(6)
 	for {
 		//Guarrisimo
-		time.Sleep(time.Second * 5)
-		clients[2].LeaveGame(6)
-		time.Sleep(time.Second * 5)
-		clients[2].JoinGame(6)
+		time.Sleep(time.Second * 1)
+		//clients[2].LeaveGame(6)
+		//time.Sleep(time.Second * 5)
+		//clients[2].JoinGame(6)
+	}
+}
+
+func test5() {
+	var clients []Client
+
+	for i := 0; i < NUM_CLIENT; i++ {
+		c := Client{Id: uint32(40 + i), PairId: uint32((i % 2) + 20)}
+		c.Start()
+		clients = append(clients, c)
+	}
+	time.Sleep(time.Second * 1)
+
+	clients[0].CreateGame(6)
+
+	time.Sleep(time.Second * 1)
+
+	for i := 1; i < NUM_CLIENT; i++ {
+		clients[i].JoinGame(6)
+	}
+
+	time.Sleep(time.Second * 5)
+	clients[2].PauseGame(6)
+	time.Sleep(time.Second * 5)
+
+	for i := 0; i < NUM_CLIENT; i++ {
+
+		clients[i].JoinGame(6)
+	}
+
+	for {
+		//Guarrisimo
+		time.Sleep(time.Second * 1)
+		//clients[2].LeaveGame(6)
+		//time.Sleep(time.Second * 5)
+		//clients[2].JoinGame(6)
 	}
 }
 
