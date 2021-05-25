@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -268,7 +269,8 @@ func (sr *SimulationRepository) updatePairWon(pairID uint32, winned bool, gamePo
 	if err != nil {
 		panic(err)
 	}
-	url := "http://localhost:9000/api/v1/pairs/" + strconv.Itoa(int(pairID))
+	port := os.Getenv("PORT")
+	url := "http://localhost:" + port + "/api/v1/pairs/" + strconv.Itoa(int(pairID))
 	// set the HTTP method, url, and request body
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(json))
 	if err != nil {
