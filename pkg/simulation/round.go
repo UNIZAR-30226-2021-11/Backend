@@ -141,18 +141,21 @@ func (r *round) CanPlayCards(arrastre bool, cs []*state.Card) {
 	// If has triumph and can kill
 	if len(triumphCards) > 0 {
 		canWin := false
-		for _, c := range triumphCards {
-			// Last winner card was a triumph, has to win it
-			if lastWinner.IsTriumph(r.triumph) {
-				if c.Wins(lastWinner) {
-					canWin = true
-					c.AllowPlay(true)
+		killTriumph := lastWinner.IsTriumph(r.triumph)
+		if killTriumph {
+			for _, c := range triumphCards {
+				// Last winner card was a triumph, has to win it
+				if lastWinner.IsTriumph(r.triumph) {
+					if c.Wins(lastWinner) {
+						canWin = true
+						c.AllowPlay(true)
+					}
 				}
-			} else {
-				// Can play all triumphs
-				canWin = true
-				setPlayable(true, triumphCards)
 			}
+		} else {
+			// Can play all triumphs
+			canWin = true
+			setPlayable(true, triumphCards)
 		}
 		// If the player has a card that can kill
 		if canWin {
