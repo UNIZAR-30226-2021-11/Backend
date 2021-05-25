@@ -13,7 +13,7 @@ type Game struct {
 	Name         string      `json:"name,omitempty"`
 	Public       bool        `json:"public,omitempty"`
 	Tournament   bool        `json:"tournament,omitempty"`
-	PlayersCount int         `json:"players_count,omitempty"`
+	PlayersCount int         `json:"players_count"`
 	Winned       bool        `json:"winned"`
 	WinnedPair   uint        `json:"winned_pair,omitempty"`
 	Points       int         `json:"points"`
