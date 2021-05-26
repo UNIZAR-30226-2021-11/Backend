@@ -357,6 +357,7 @@ func TestPlayAllRounds(t *testing.T) {
 		t.Run("dealed distinct cards", func(t *testing.T) {
 			checkDistinctCards(t, g)
 		})
+		t.Logf("points team A %v, team B %v", g.GameState.PointsTeamA, g.GameState.PointsTeamB)
 
 		t.Run("just one player can play", func(t *testing.T) {
 			count := 0
@@ -370,7 +371,6 @@ func TestPlayAllRounds(t *testing.T) {
 			}
 		})
 	}
-
 	t.Run("game state ended", func(t *testing.T) {
 		if g.winnerPair != 0 && g.GameState.currentState != ended {
 			t.Errorf("got %v, want %v", g.GameState.currentState, ended)
