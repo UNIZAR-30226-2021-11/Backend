@@ -14,8 +14,8 @@ func TestCreateDeck(t *testing.T) {
 			if d.cards[i].Suit != suit {
 				t.Errorf("got %v, want %v", d.cards[i].Suit, suit)
 			}
-			if d.cards[i].Points != getPoints(c) {
-				t.Errorf("got %v, want %v", d.cards[i].Points, getPoints(c))
+			if d.cards[i].Points != GetPoints(c) {
+				t.Errorf("got %v, want %v", d.cards[i].Points, GetPoints(c))
 			}
 			//t.Logf("%v de %s, vale %d", c, suit, d.cards[i].Points)
 			i++
@@ -35,7 +35,7 @@ func TestDeck_Shuffle(t *testing.T) {
 		for _, c := range cards {
 			carta := &Card{
 				Suit:   suit,
-				Points: getPoints(c),
+				Points: GetPoints(c),
 				Val:    c,
 			}
 			if !carta.Equals(d.cards[i]) {

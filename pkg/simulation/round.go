@@ -67,7 +67,7 @@ func (r *round) playedCard(p *state.Player, c *state.Card) {
 	r.played[r.pos] = pc
 	r.cardsPlayed[r.pos] = c
 	// Sum of points
-	r.points += c.Points
+	r.points += state.GetPoints(c.Val)
 	if r.pos < 3 {
 		r.pos++
 	}

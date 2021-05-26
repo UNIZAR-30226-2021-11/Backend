@@ -435,7 +435,7 @@ func (c *Client) roundPoints() int {
 }
 
 func newWsConn() *websocket.Conn {
-	u := url.URL{Scheme: "ws", Host: ":9000", Path: "/simulation"}
+	u := url.URL{Scheme: "ws", Host: "15.188.14.213:11050", Path: "/simulation"}
 
 	// Establish connection
 	c, _, _ := websocket.DefaultDialer.Dial(u.String(), nil)
