@@ -242,7 +242,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 	game, ok := sr.games[changed.GameID]
 	if ok && game.GameState.Ended {
 		winningPair, winningPoints, lostPair, lostPoints := game.GetWinningPair()
-		game1 := pkgGame.Game{
+		game1 := &pkgGame.Game{
 			ID:           uint(changed.GameID),
 			WinnedPair:   uint(winningPair),
 			WinnedPoints: winningPoints,
@@ -266,7 +266,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 }
 
 // updatePairWon updates the pair info in the API
-func (sr *SimulationRepository) updateGameWon(game pkgGame.Game) {
+func (sr *SimulationRepository) updateGameWon(game *pkgGame.Game) {
 	// initialize http client
 	client := &http.Client{}
 
