@@ -221,6 +221,7 @@ func (g *Game) processCard(c *state.Card) {
 			g.GameState.currentState = singing
 			g.singingState()
 		}
+
 	}
 }
 
@@ -509,8 +510,8 @@ func (g *Game) GetWinningPair() (pairIdA uint32, pointsA int, pairIdB uint32, po
 		pointsB = g.GetTeamPoints(int(pB.Pair))
 
 	} else {
-		pointsB = g.GetTeamPoints(int(pA.Pair))
-		pointsA = g.GetTeamPoints(int(pB.Pair))
+		pointsB = g.GetTeamPoints(int(pB.Pair))
+		pointsA = g.GetTeamPoints(int(pA.Pair))
 		pA, pB = pB, pA
 	}
 
