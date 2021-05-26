@@ -3,7 +3,6 @@ package simulation
 import (
 	"Backend/pkg/state"
 	"log"
-	"sync"
 )
 
 const (
@@ -27,8 +26,6 @@ const (
 	TeamA = 1
 	TeamB = 2
 )
-
-var handlerMutex = &sync.Mutex{}
 
 // Game has 10 rounds
 type Game struct {
@@ -471,37 +468,32 @@ func (g *Game) checkWinner() bool {
 // Handlers
 
 func (g *Game) HandleCardPlayed(card *state.Card) {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
+
 	g.processCard(card)
 }
 
 func (g *Game) HandleSing(suit string, hasSinged bool) {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
+
 	if hasSinged {
 		g.processSing(suit)
 	}
 }
 
 func (g *Game) HandleChangedCard(changedCard bool) {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
+
 	g.changeCard(changedCard)
 
 }
 
 // GetPlayersID returns the ids of all players
 func (g *Game) GetPlayersID() []uint32 {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
+
 	return g.GameState.Players.GetPlayersIds()
 }
 
 // GetOpponentsID returns the ids of the other pair players
 func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
+
 	pair := g.GameState.Players.Find(playerID).Pair
 	var ids []uint32
 	for _, p := range g.GameState.Players.All {
@@ -515,8 +507,6 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 
 // GetWinningPair returns the pairId and the points of the winning pair
 func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPair uint32, losingPoints int) {
-	handlerMutex.Lock()
-	defer handlerMutex.Unlock()
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
 	if g.GameState.WinnerPair == pA.Pair {
