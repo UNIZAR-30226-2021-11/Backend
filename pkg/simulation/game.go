@@ -441,24 +441,29 @@ func (g *Game) checkWinner() bool {
 	//SI una pareja no llega a 30 sin cantes, pierde
 	if g.GameState.PointsTeamA < 30 {
 		g.winnerPair = TeamB
+		g.GameState.WinnerPair = TeamB
 		return true
 	}
 	if g.GameState.PointsTeamB < 30 {
 		g.winnerPair = TeamA
+		g.GameState.WinnerPair = TeamA
 		return true
 	}
 	// Si ambas superan 100, gana la que lleve 10 ultimas
 	if g.GetTeamPoints(TeamA) > 100 && g.GetTeamPoints(TeamB) > 100 {
 		g.winnerPair = g.winnerLast10
+		g.GameState.WinnerPair = g.winnerLast10
 		return true
 	}
 
 	if g.GetTeamPoints(TeamA) > 100 {
 		g.winnerPair = TeamA
+		g.GameState.WinnerPair = TeamA
 		return true
 	}
 	if g.GetTeamPoints(TeamB) > 100 {
 		g.winnerPair = TeamB
+		g.GameState.WinnerPair = TeamB
 		return true
 	}
 
@@ -509,6 +514,7 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPair uint32, losingPoints int) {
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
+
 	if g.GameState.WinnerPair == pA.Pair {
 		winningPair = pA.InternPair
 		winningPoints = g.GetTeamPoints(int(pA.Pair))

@@ -420,6 +420,9 @@ func TestPlayAllRounds(t *testing.T) {
 		}
 	})
 	t.Logf("puntos A : %v, puntos B: %v", g.GameState.PointsTeamA, g.GameState.PointsTeamB)
+
+	wp, pa, lp, pl := g.GetWinningPair()
+	t.Log(wp, pa, lp, pl)
 }
 
 func TestInitialCardDealing(t *testing.T) {
@@ -552,4 +555,33 @@ func NewTestGame(p []*state.Player) (g *Game) {
 	}
 	g.GameState.currentState = t1
 	return g
+}
+
+func TestGame_GetWinningPair(t *testing.T) {
+	ps := createTestPlayers()
+	g := NewGame(ps)
+	// Mark as singed
+	g.sings.singedSuit(state.SUIT1)
+	g.sings.singedSuit(state.SUIT2)
+	g.sings.singedSuit(state.SUIT3)
+	g.sings.singedSuit(state.SUIT4)
+
+	var cardsPlayed []*state.Card
+
+	for rs := 0; rs < 10; rs++ {
+		for i := 0; i < 4; i++ {
+			p := g.GameState.Players.Current()
+			c := p.PickCard(0)
+			g.HandleCardPlayed(c)
+			cardsPlayed = append(cardsPlayed, c)
+		}
+		if g.pairCanSing {
+			g.HandleSing("", false)
+		}
+		if g.pairCanSwapCard {
+			g.HandleChangedCard(false)
+		}
+	}
+	wp, pa, lp, pl := g.GetWinningPair()
+	t.Log(wp, pa, lp, pl)
 }
