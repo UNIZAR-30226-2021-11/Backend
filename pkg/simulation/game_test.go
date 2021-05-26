@@ -225,6 +225,7 @@ func TestPlayRound(t *testing.T) {
 		if got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
+		t.Logf("got %v, want %v", got, want)
 	})
 
 	t.Run("winner team has points", func(t *testing.T) {

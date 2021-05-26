@@ -268,7 +268,6 @@ func (g *Game) updatePoints() {
 		if g.currentRound == 9 {
 			g.GameState.PointsTeamB += 10
 			g.winnerLast10 = TeamB
-
 		}
 	}
 }
@@ -502,21 +501,24 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 }
 
 // GetWinningPair returns the pairId and the points of the winning pair
-func (g *Game) GetWinningPair() (pairIdA uint32, pointsA int, pairIdB uint32, pointsB int) {
-
+func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPair uint32, losingPoints int) {
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
 	if g.GameState.WinnerPair == pA.Pair {
-		pointsA = g.GetTeamPoints(int(pA.Pair))
-		pointsB = g.GetTeamPoints(int(pB.Pair))
+		winningPair = pA.InternPair
+		winningPoints = g.GetTeamPoints(int(pA.Pair))
+		losingPair = pB.InternPair
+		losingPoints = g.GetTeamPoints(int(pB.Pair))
 
 	} else {
-		pointsB = g.GetTeamPoints(int(pB.Pair))
-		pointsA = g.GetTeamPoints(int(pA.Pair))
-		pA, pB = pB, pA
+
+		winningPair = pB.InternPair
+		winningPoints = g.GetTeamPoints(int(pB.Pair))
+		losingPair = pB.InternPair
+		losingPoints = g.GetTeamPoints(int(pA.Pair))
 	}
 
-	return pA.InternPair, pointsA, pB.InternPair, pointsB
+	return winningPair, winningPoints, losingPair, losingPoints
 }
 
 // GetTeamPoints returns points for a team, even returns Team A, odd Team B
