@@ -231,7 +231,6 @@ func (c *Client) CanChange() bool {
 
 // pickBestCard returns the first card playable
 func (c *Client) pickBestCard() *state.Card {
-	// TODO picking card logic
 	for _, card := range c.GetCards() {
 		if card.CanBePlayed() {
 			return card
@@ -254,12 +253,6 @@ func (c *Client) GetCards() []*state.Card {
 	return nil
 }
 
-func (c *Client) getKillingCards() []*state.Card {
-	//TODO implement
-	return nil
-}
-
-// TODO implement
 func (c *Client) getCurrentWinning() *state.Card {
 	gd := c.GameData.Game.CardsPlayedRound
 	//winnerCard := gd[0]
