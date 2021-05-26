@@ -231,11 +231,11 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 
 	if cardPlayedEvent.Card != nil {
 		game.HandleCardPlayed(cardPlayedEvent.Card)
+
+		log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
+
+		sr.sendNewState(cardPlayedEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 	}
-
-	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
-
-	sr.sendNewState(cardPlayedEvent.GameID, game.GameState, STATUS_NORMAL, game.GetPlayersID())
 }
 
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
