@@ -35,13 +35,5 @@ func NewApi() http.Handler {
 
 	r.Mount("/players", pr.Routes())
 
-	par := &PairRouter{
-		Repository: &data.PairRepository{
-			Data: data.New(),
-		},
-	}
-
-	r.Mount("/pairs", par.Routes())
-
 	return r
 }

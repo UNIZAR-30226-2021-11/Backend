@@ -310,16 +310,23 @@ func (gr *GameRepository) CreateTournament(ctx context.Context, g *game.Game) er
 
 // End ends a game by id.
 func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
-	q1 := `
+	endGame := `
 	UPDATE games set end_date = $1
 		WHERE id = $2;
 	`
 
-	q2 := `
-	UPDATE pairs set winned = true
-		WHERE id = $1;
+	winnedPair := `
+	UPDATE pairs set winned = true, game_points = $1
+		WHERE id = $2;
 	`
-	stmt, err := gr.Data.DB.PrepareContext(ctx, q1)
+
+	lostPair := `
+	UPDATE pairs set winned = false, game_points = $1
+		WHERE id = $2;
+	`
+
+	// End the game
+	stmt, err := gr.Data.DB.PrepareContext(ctx, endGame)
 	if err != nil {
 		return err
 	}
@@ -333,7 +340,8 @@ func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
 		return err
 	}
 
-	stmt, err = gr.Data.DB.PrepareContext(ctx, q2)
+	// Update winned pair
+	stmt, err = gr.Data.DB.PrepareContext(ctx, winnedPair)
 	if err != nil {
 		return err
 	}
@@ -341,7 +349,22 @@ func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(
-		ctx, game.WinnedPair,
+		ctx, game.WinnedPoints, game.WinnedPair,
+	)
+	if err != nil {
+		return err
+	}
+
+	//Update lost pair
+	stmt, err = gr.Data.DB.PrepareContext(ctx, lostPair)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, game.LostPoints, game.LostPair,
 	)
 	if err != nil {
 		return err
