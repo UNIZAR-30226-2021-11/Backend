@@ -501,10 +501,18 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 
 // GetWinningPair returns the pairId and the points of the winning pair
 func (g *Game) GetWinningPair() (pairIdA uint32, pointsA int, pairIdB uint32, pointsB int) {
+
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
-	pointsA = g.GetTeamPoints(int(pA.Pair))
-	pointsB = g.GetTeamPoints(int(pB.Pair))
+	if g.GameState.WinnerPair == pA.Pair {
+		pointsA = g.GetTeamPoints(int(pA.Pair))
+		pointsB = g.GetTeamPoints(int(pB.Pair))
+
+	} else {
+		pointsB = g.GetTeamPoints(int(pA.Pair))
+		pointsA = g.GetTeamPoints(int(pB.Pair))
+		pA, pB = pB, pA
+	}
 
 	return pA.InternPair, pointsA, pB.InternPair, pointsB
 }
