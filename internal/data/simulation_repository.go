@@ -240,6 +240,9 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
 	game, ok := sr.games[changed.GameID]
+	if ok {
+		log.Printf("Round %v, points A : %v, points B: %v", game.GameState.CurrentRound, game.GameState.PointsTeamA, game.GameState.PointsTeamB)
+	}
 	if ok && game.GameState.Ended {
 		winningPair, winningPoints, lostPair, lostPoints := game.GetWinningPair()
 		game1 := &pkgGame.Game{
@@ -269,7 +272,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 func (sr *SimulationRepository) updateGameWon(game *pkgGame.Game) {
 	// initialize http client
 	client := &http.Client{}
-
+	log.Printf("points winner %v: %v, points loser %v: %v", game.WinnedPair, game.WinnedPoints, game.LostPair, game.LostPoints)
 	// marshal User to json
 	json, err := json.Marshal(game)
 	if err != nil {

@@ -441,24 +441,29 @@ func (g *Game) checkWinner() bool {
 	//SI una pareja no llega a 30 sin cantes, pierde
 	if g.GameState.PointsTeamA < 30 {
 		g.winnerPair = TeamB
+		g.GameState.WinnerPair = TeamB
 		return true
 	}
 	if g.GameState.PointsTeamB < 30 {
 		g.winnerPair = TeamA
+		g.GameState.WinnerPair = TeamA
 		return true
 	}
 	// Si ambas superan 100, gana la que lleve 10 ultimas
 	if g.GetTeamPoints(TeamA) > 100 && g.GetTeamPoints(TeamB) > 100 {
 		g.winnerPair = g.winnerLast10
+		g.GameState.WinnerPair = g.winnerLast10
 		return true
 	}
 
 	if g.GetTeamPoints(TeamA) > 100 {
 		g.winnerPair = TeamA
+		g.GameState.WinnerPair = TeamA
 		return true
 	}
 	if g.GetTeamPoints(TeamB) > 100 {
 		g.winnerPair = TeamB
+		g.GameState.WinnerPair = TeamB
 		return true
 	}
 
@@ -468,27 +473,32 @@ func (g *Game) checkWinner() bool {
 // Handlers
 
 func (g *Game) HandleCardPlayed(card *state.Card) {
+
 	g.processCard(card)
 }
 
 func (g *Game) HandleSing(suit string, hasSinged bool) {
+
 	if hasSinged {
 		g.processSing(suit)
 	}
 }
 
 func (g *Game) HandleChangedCard(changedCard bool) {
+
 	g.changeCard(changedCard)
 
 }
 
 // GetPlayersID returns the ids of all players
 func (g *Game) GetPlayersID() []uint32 {
+
 	return g.GameState.Players.GetPlayersIds()
 }
 
 // GetOpponentsID returns the ids of the other pair players
 func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
+
 	pair := g.GameState.Players.Find(playerID).Pair
 	var ids []uint32
 	for _, p := range g.GameState.Players.All {
@@ -504,6 +514,7 @@ func (g *Game) GetOpponentsID(playerID uint32) []uint32 {
 func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPair uint32, losingPoints int) {
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
+
 	if g.GameState.WinnerPair == pA.Pair {
 		winningPair = pA.InternPair
 		winningPoints = g.GetTeamPoints(int(pA.Pair))
@@ -514,7 +525,7 @@ func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPa
 
 		winningPair = pB.InternPair
 		winningPoints = g.GetTeamPoints(int(pB.Pair))
-		losingPair = pB.InternPair
+		losingPair = pA.InternPair
 		losingPoints = g.GetTeamPoints(int(pA.Pair))
 	}
 
@@ -523,6 +534,7 @@ func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPa
 
 // GetTeamPoints returns points for a team, even returns Team A, odd Team B
 func (g *Game) GetTeamPoints(team int) (points int) {
+
 	if team%2 == 0 {
 		points = g.GameState.PointsTeamA + g.GameState.PointsSingA
 	} else {

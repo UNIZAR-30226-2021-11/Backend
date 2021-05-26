@@ -17,7 +17,7 @@ func CreateCard(suit string, val int) *Card {
 	return &Card{
 		Suit:   suit,
 		Val:    val,
-		Points: getPoints(val),
+		Points: GetPoints(val),
 	}
 }
 
@@ -75,7 +75,7 @@ func (c *Card) Equals(c2 *Card) bool {
 }
 
 // Returns the Points that this Card gives
-func getPoints(cardName int) int {
+func GetPoints(cardName int) int {
 	switch cardName {
 	case 1:
 		return 11
