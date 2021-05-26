@@ -169,7 +169,7 @@ func (c *Client) ChangeCard() {
 		GameID:    c.gameId,
 		PlayerID:  c.Id,
 		EventType: events.CARD_CHANGED,
-		Changed:   true,
+		Changed:   false,
 	}
 	_ = c.WriteJSON(event)
 }
