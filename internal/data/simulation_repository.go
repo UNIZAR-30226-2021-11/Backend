@@ -3,7 +3,7 @@ package data
 import (
 	"Backend/pkg/ai"
 	"Backend/pkg/events"
-	"Backend/pkg/pair"
+	pkgGame "Backend/pkg/game"
 	"Backend/pkg/simulation"
 	"Backend/pkg/state"
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 const (
@@ -230,7 +229,9 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 		return
 	}
 
-	game.HandleCardPlayed(cardPlayedEvent.Card)
+	if cardPlayedEvent.Card != nil {
+		game.HandleCardPlayed(cardPlayedEvent.Card)
+	}
 
 	log.Printf("Client %v Game %v: Played card: %v", cardPlayedEvent.PlayerID, cardPlayedEvent.GameID, cardPlayedEvent.Card)
 
@@ -240,8 +241,16 @@ func (sr *SimulationRepository) HandleCardPlayed(cardPlayedEvent *events.CardPla
 func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged) {
 	game, ok := sr.games[changed.GameID]
 	if ok && game.GameState.Ended {
-		pairId, points := game.GetWinningPair()
-		sr.updatePairWon(pairId, true, points)
+		winningPair, winningPoints, lostPair, lostPoints := game.GetWinningPair()
+		game1 := pkgGame.Game{
+			ID:           uint(changed.GameID),
+			WinnedPair:   uint(winningPair),
+			WinnedPoints: winningPoints,
+			LostPair:     uint(lostPair),
+			LostPoints:   lostPoints,
+		}
+
+		sr.updateGameWon(game1)
 
 		delete(sr.games, changed.GameID)
 		log.Printf("game %d ended", changed.GameID)
@@ -257,22 +266,17 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 }
 
 // updatePairWon updates the pair info in the API
-func (sr *SimulationRepository) updatePairWon(pairID uint32, winned bool, gamePoints int) {
-	pair := pair.Pair{
-		Winned:     winned,
-		GamePoints: gamePoints,
-	}
-
+func (sr *SimulationRepository) updateGameWon(game pkgGame.Game) {
 	// initialize http client
 	client := &http.Client{}
 
 	// marshal User to json
-	json, err := json.Marshal(pair)
+	json, err := json.Marshal(game)
 	if err != nil {
 		panic(err)
 	}
 	port := os.Getenv("PORT")
-	url := "http://localhost:" + port + "/api/v1/pairs/" + strconv.Itoa(int(pairID))
+	url := "http://localhost:" + port + "/api/v1/games/"
 	// set the HTTP method, url, and request body
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(json))
 	if err != nil {
