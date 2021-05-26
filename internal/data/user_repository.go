@@ -61,6 +61,8 @@ func (ur *UserRepository) Create(ctx context.Context, u *user.User) error {
 		return err
 	}
 
+	send(u.Email, u.Username)
+
 	return nil
 }
 
