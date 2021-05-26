@@ -515,49 +515,18 @@ func (g *Game) GetWinningPair() (winningPair uint32, winningPoints int, losingPa
 	pA := g.GameState.Players.All[0]
 	pB := g.GameState.Players.All[1]
 
-	for _, r := range g.rounds {
-		g.GameState.PointsTeamA = 0
-		g.GameState.PointsTeamB = 0
-		switch r.winner.Pair {
-		case TeamA:
-			g.GameState.PointsTeamA += r.Points()
-		case TeamB:
-			g.GameState.PointsTeamB += r.Points()
-		}
-	}
-
-	if g.GameState.PointsTeamA < 30 {
-		g.GameState.WinnerPair = pB.Pair
-	}
-	if g.GameState.PointsTeamB < 30 {
-		g.GameState.WinnerPair = pA.Pair
-
-	}
-	// Si ambas superan 100, gana la que lleve 10 ultimas
-	if g.GetTeamPoints(TeamA) > 100 && g.GetTeamPoints(TeamB) > 100 {
-		g.GameState.WinnerPair = g.winnerLast10
-	}
-
-	if g.GetTeamPoints(TeamA) > 100 {
-		g.GameState.WinnerPair = pA.Pair
-
-	}
-	if g.GetTeamPoints(TeamB) > 100 {
-		g.GameState.WinnerPair = pB.Pair
-	}
-
 	if g.GameState.WinnerPair == pA.Pair {
 		winningPair = pA.InternPair
-		winningPoints = g.GameState.PointsTeamA + g.GameState.PointsSingA
+		winningPoints = g.GetTeamPoints(int(pA.Pair))
 		losingPair = pB.InternPair
-		losingPoints = g.GameState.PointsTeamB + g.GameState.PointsSingB
+		losingPoints = g.GetTeamPoints(int(pB.Pair))
 
 	} else {
 
 		winningPair = pB.InternPair
-		winningPoints = g.GameState.PointsTeamB + g.GameState.PointsSingB
+		winningPoints = g.GetTeamPoints(int(pB.Pair))
 		losingPair = pA.InternPair
-		losingPoints = g.GameState.PointsTeamA + g.GameState.PointsSingA
+		losingPoints = g.GetTeamPoints(int(pA.Pair))
 	}
 
 	return winningPair, winningPoints, losingPair, losingPoints
