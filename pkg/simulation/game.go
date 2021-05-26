@@ -186,6 +186,7 @@ func (g *Game) newRound() {
 	for _, player := range g.GameState.Players.All {
 		g.rounds[g.currentRound].CanPlayCards(g.GameState.Arrastre, player.GetCards())
 	}
+	g.GameState.CardsPlayedRound = g.rounds[g.currentRound].GetCardsPlayed()
 }
 
 // Process a new card played
