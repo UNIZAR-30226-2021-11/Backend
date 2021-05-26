@@ -269,7 +269,7 @@ func (sr *SimulationRepository) HandleStateChanged(changed *events.StateChanged)
 func (sr *SimulationRepository) updateGameWon(game *pkgGame.Game) {
 	// initialize http client
 	client := &http.Client{}
-
+	log.Printf("points team A: %v, points team B: %v", game.WinnedPoints, game.LostPoints)
 	// marshal User to json
 	json, err := json.Marshal(game)
 	if err != nil {

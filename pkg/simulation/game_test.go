@@ -419,6 +419,7 @@ func TestPlayAllRounds(t *testing.T) {
 			t.Logf("doesn't need rematch")
 		}
 	})
+	t.Logf("puntos A : %v, puntos B: %v", g.GameState.PointsTeamA, g.GameState.PointsTeamB)
 }
 
 func TestInitialCardDealing(t *testing.T) {
@@ -452,7 +453,8 @@ func TestGame_HandleChangedCard(t *testing.T) {
 	ps := createTestPlayers()
 	g := NewTestGame(ps)
 	ps[0].Cards[5] = state.CreateCard(g.GameState.TriumphCard.Suit, 7)
-
+	sevenHolder := ps[0]
+	//initialTriumphCard := g.deck.GetTriumphCard()
 	log.Printf("jeje %v", g)
 	for i := 0; i < 4; i++ {
 		c := g.GameState.Players.Current().PickCard(0)
@@ -468,8 +470,21 @@ func TestGame_HandleChangedCard(t *testing.T) {
 	})
 
 	t.Run("player 1 should be able to change", func(t *testing.T) {
-		if !ps[0].CanChange {
+		if !sevenHolder.CanChange {
 			t.Errorf("cannot change")
+		}
+		if g.deck.GetTriumphCard().Val == 7 {
+			t.Errorf("got %v, want != %v", g.deck.GetTriumphCard().Val, 7)
+		}
+	})
+
+	g.HandleChangedCard(true)
+	t.Run("deck should have seven", func(t *testing.T) {
+		if g.deck.GetTriumphCard().Val != 7 {
+			t.Errorf("got %v, want %v", g.deck.GetTriumphCard().Val, 7)
+		}
+		if sevenHolder.Cards[5].Equals(state.CreateCard(g.GameState.TriumphCard.Suit, 7)) {
+			t.Errorf("card not changed")
 		}
 	})
 }
