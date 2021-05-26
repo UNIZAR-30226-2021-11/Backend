@@ -276,7 +276,7 @@ func (sr *SimulationRepository) updateGameWon(game *pkgGame.Game) {
 		panic(err)
 	}
 	port := os.Getenv("PORT")
-	url := "http://localhost:" + port + "/api/v1/games/"
+	url := "http://localhost:" + port + "/api/v1/games/end"
 	// set the HTTP method, url, and request body
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(json))
 	if err != nil {

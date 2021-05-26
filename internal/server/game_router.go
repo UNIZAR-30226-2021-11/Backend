@@ -156,21 +156,19 @@ func (gr *GameRouter) EndHandler(w http.ResponseWriter, r *http.Request) {
 func (gr *GameRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.Authorizator)
+	r.Put("/end", gr.EndHandler)
 
-	r.Get("/user/{userId}", gr.GetByUserHandler)
+	r.With(middleware.Authorizator).Get("/user/{userId}", gr.GetByUserHandler)
 
-	r.Get("/", gr.GetAllHandler)
+	r.With(middleware.Authorizator).Get("/", gr.GetAllHandler)
 
-	r.Get("/tournament", gr.GetTournamentHandler)
+	r.With(middleware.Authorizator).Get("/tournament", gr.GetTournamentHandler)
 
-	r.Get("/{gameId}", gr.GetOneHandler)
+	r.With(middleware.Authorizator).Get("/{gameId}", gr.GetOneHandler)
 
-	r.Post("/{userId}", gr.CreateHandler)
+	r.With(middleware.Authorizator).Post("/{userId}", gr.CreateHandler)
 
-	r.Post("/tournament", gr.CreateTournamentHandler)
-
-	r.Put("/", gr.EndHandler)
+	r.With(middleware.Authorizator).Post("/tournament", gr.CreateTournamentHandler)
 
 	return r
 }
