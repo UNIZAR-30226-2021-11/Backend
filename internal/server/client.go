@@ -1,33 +1,62 @@
 package server
 
 import (
-	v1 "Backend/internal/server/v1"
 	"Backend/pkg/events"
 	"github.com/gorilla/websocket"
 	"log"
+	"time"
 )
 
-const channelBufSize = 100
+const (
+	channelBufSize = 100
+
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 6 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+)
 
 // Client struct holds client-specific variables.
 type Client struct {
-	ID     uint32
+	ID     uint32 `json:"player_id,omitempty"`
+	pairID uint32
+	gameID uint32
 	ws     *websocket.Conn
-	ch     chan *[]byte
+	ch     chan interface{}
 	doneCh chan bool
-	sr     *v1.SimulationRouter
+	sr     *SimulationRouter
 }
 
 // NewClient initializes a new Client struct with given websocket.
-func NewClient(ws *websocket.Conn, sr *v1.SimulationRouter) *Client {
+func NewClient(ws *websocket.Conn, sr *SimulationRouter) *Client {
 	if ws == nil {
 		panic("ws cannot be nil")
 	}
 
-	ch := make(chan *[]byte, channelBufSize)
-	doneCh := make(chan bool)
+	ch := make(chan interface{}, channelBufSize)
+	doneCh := make(chan bool, channelBufSize)
 
-	return &Client{sr.IdManager.NextPlayerId(), ws, ch, doneCh, sr}
+	player := struct {
+		Id     uint32 `json:"player_id,omitempty"`
+		PairId uint32 `json:"pair_id,omitempty"`
+	}{}
+	err := ws.ReadJSON(&player)
+	if err != nil {
+		log.Print("Error reading player ID")
+	}
+
+	return &Client{
+		ID:     player.Id,
+		pairID: player.PairId,
+		ws:     ws,
+		ch:     ch,
+		doneCh: doneCh,
+		sr:     sr,
+	}
 }
 
 // Conn returns client's websocket.Conn struct.
@@ -36,9 +65,9 @@ func (c *Client) Conn() *websocket.Conn {
 }
 
 // SendMessage sends game state to the client.
-func (c *Client) SendMessage(bytes *[]byte) {
+func (c *Client) SendMessage(data interface{}) {
 	select {
-	case c.ch <- bytes:
+	case c.ch <- data:
 	default:
 		//c.sr.monitor.AddDroppedMessage()
 	}
@@ -57,20 +86,27 @@ func (c *Client) Listen() {
 
 // Listen write request via chanel
 func (c *Client) listenWrite() {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		err := c.ws.Close()
-		if err != nil {
-			log.Println("Error:", err.Error())
-		}
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
+		ticker.Stop()
+		_ = c.ws.Close()
+		//if err != nil {
+		//	log.Println("Error:", err.Error())
+		//}
 	}()
 
 	log.Println("Listening write to client")
 	for {
 		select {
 
-		case bytes := <-c.ch:
+		case data := <-c.ch:
 			//before := time.Now()
-			err := c.ws.WriteMessage(websocket.BinaryMessage, *bytes)
+			err := c.ws.WriteJSON(data)
 			//after := time.Now()
 
 			if err != nil {
@@ -78,6 +114,12 @@ func (c *Client) listenWrite() {
 			} else {
 				//elapsed := after.Sub(before)
 				//c.sr.monitor.AddSendTime(elapsed)
+			}
+
+		case <-ticker.C:
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
 			}
 
 		case <-c.doneCh:
@@ -89,11 +131,19 @@ func (c *Client) listenWrite() {
 
 func (c *Client) listenRead() {
 	defer func() {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		err := c.ws.Close()
 		if err != nil {
 			log.Println("Error:", err.Error())
 		}
 	}()
+
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
 	log.Println("Listening read from client")
 	for {
@@ -110,38 +160,100 @@ func (c *Client) listenRead() {
 }
 
 func (c *Client) readFromWebSocket() {
-	messageType, data, err := c.ws.ReadMessage()
+	var event events.Event
+	err := c.ws.ReadJSON(&event)
 	if err != nil {
+		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{
+			PlayerID: c.ID,
+			PairID:   c.pairID,
+			GameID:   c.gameID,
+		})
 		log.Println(err)
 
 		c.doneCh <- true
-		c.sr.EventsDispatcher.FireUserLeft(&events.UserLeft{ClientID: c.ID})
-	} else if messageType != websocket.BinaryMessage {
-		log.Println("Non binary message recived, ignoring")
 	} else {
-		c.unmarshalUserInput(data)
+		c.unmarshalUserInput(event)
 	}
 }
 
-func (c *Client) unmarshalUserInput(data []byte) {
-	//protoUserMessage := &pb.UserMessage{}
-	//if err := proto.Unmarshal(data, protoUserMessage); err != nil {
-	//	log.Fatalln("Failed to unmarshal UserInput:", err)
-	//	return
-	//}
-	//
-	//switch x := protoUserMessage.Content.(type) {
-	//case *pb.UserMessage_UserAction:
-	//	userInputEvent := events.UserInputFromProto(protoUserMessage.GetUserAction(), c.id)
-	//	c.server.eventsDispatcher.FireUserInput(userInputEvent)
-	//case *pb.UserMessage_TargetAngle:
-	//	targetAngleEvent := events.TargetAngleFromProto(protoUserMessage.GetTargetAngle(), c.id)
-	//	c.server.eventsDispatcher.FireTargetAngle(targetAngleEvent)
-	//case *pb.UserMessage_JoinGame:
-	//	c.tryToJoinGame(protoUserMessage.GetJoinGame())
-	//case *pb.UserMessage_Ping:
-	//	c.sendPong(protoUserMessage.GetPing().Id)
-	//default:
-	//	log.Fatalln("Unknown message type %T", x)
-	//}
+func (c *Client) unmarshalUserInput(event events.Event) {
+	switch event.EventType {
+
+	case events.GAME_CREATE:
+		e := &events.GameCreate{
+			PlayerID: event.PlayerID,
+			PairID:   event.PairID,
+			GameID:   event.GameID,
+			UserName: event.UserName,
+		}
+		c.sr.EventsDispatcher.FireGameCreate(e)
+
+	case events.SINGLE_GAME_CREATE:
+		e := &events.SingleGameCreate{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			UserName: event.UserName,
+		}
+		c.sr.EventsDispatcher.FireSingleGameCreate(e)
+
+	case events.GAME_PAUSE:
+		e := &events.GamePause{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+		}
+		c.sr.EventsDispatcher.FireGamePause(e)
+
+	case events.VOTE_PAUSE:
+		e := &events.VotePause{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Vote:     event.Vote,
+		}
+		c.sr.EventsDispatcher.FireVotePause(e)
+
+	case events.USER_JOINED:
+		e := &events.UserJoined{
+			PlayerID: event.PlayerID,
+			PairID:   event.PairID,
+			GameID:   event.GameID,
+			UserName: event.UserName,
+		}
+		c.sr.EventsDispatcher.FireUserJoined(e)
+
+	case events.USER_LEFT:
+		e := &events.UserLeft{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			PairID:   event.PairID,
+		}
+		c.sr.EventsDispatcher.FireUserLeft(e)
+
+	case events.CARD_PLAYED:
+		e := &events.CardPlayed{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Card:     event.Card,
+		}
+		c.sr.EventsDispatcher.FireCardPlayed(e)
+
+	case events.CARD_CHANGED:
+		e := &events.CardChanged{
+			PlayerID: event.PlayerID,
+			GameID:   event.GameID,
+			Changed:  event.Changed,
+		}
+		c.sr.EventsDispatcher.FireCardChanged(e)
+
+	case events.SING:
+		e := &events.Sing{
+			PlayerID:  event.PlayerID,
+			GameID:    event.GameID,
+			Suit:      event.Suit,
+			HasSinged: event.HasSinged,
+		}
+		c.sr.EventsDispatcher.FireSing(e)
+
+	default:
+		log.Fatalln("Unknown message type %T", event.EventType)
+	}
 }

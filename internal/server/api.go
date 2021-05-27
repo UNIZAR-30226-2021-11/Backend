@@ -1,4 +1,4 @@
-package v1
+package server
 
 import (
 	"net/http"
@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// New returns the API V1 Handler with configuration.
-func New() http.Handler {
+// NewServer returns the API V1 Handler with configuration.
+func NewApi() http.Handler {
 	r := chi.NewRouter()
 
 	ur := &UserRouter{
@@ -27,7 +27,7 @@ func New() http.Handler {
 
 	r.Mount("/games", gr.Routes())
 
-	pr := &PlayerRouter {
+	pr := &PlayerRouter{
 		Repository: &data.PlayerRepository{
 			Data: data.New(),
 		},

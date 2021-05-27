@@ -1,7 +1,6 @@
 package events
 
-type UserLeft struct {
+type GamePause struct {
 	PlayerID uint32
 	GameID   uint32
-	PairID   uint32
 }

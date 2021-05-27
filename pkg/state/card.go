@@ -1,35 +1,37 @@
 package state
 
+import "fmt"
+
 // Card represents a guiñote Card
 // Val allowed [1-7] [10-12]
 type Card struct {
 	Suit     string `json:"suit"`
-	Val      int `json:"val"`
-	Points   int `json:"points"`
-	Playable bool `json:"playable"`
+	Val      int    `json:"val"`
+	Points   int    `json:"points"`
+	Playable bool   `json:"playable"`
 }
 
-// Creates a new card with the correct Points and value
+// CreateCard Creates a new card with the correct Points and value
 func CreateCard(suit string, val int) *Card {
 
 	return &Card{
 		Suit:   suit,
 		Val:    val,
-		Points: getPoints(val),
+		Points: GetPoints(val),
 	}
 }
 
-// Changes the playability of the card
+// AllowPlay Changes the playability of the card
 func (c *Card) AllowPlay(canBePlayed bool) {
 	c.Playable = canBePlayed
 }
 
-// Checks wether this card can be played or not
+// CanBePlayed Checks wether this card can be played or not
 func (c *Card) CanBePlayed() bool {
 	return c.Playable
 }
 
-// Checks if the value of c2 is less than that of c
+// Wins Checks if the value of c2 is less than that of c
 // They must be of the same Suit
 func (c *Card) Wins(c2 *Card) bool {
 	// If the have no value, check with order
@@ -39,18 +41,21 @@ func (c *Card) Wins(c2 *Card) bool {
 	return c.Points > c2.Points
 }
 
-// Checks if the card is triumph
+// IsTriumph Checks if the card is triumph
 func (c *Card) IsTriumph(triumph string) bool {
 	return c.Suit == triumph
 }
 
-// Checks whether the cards have the same Suit
+// SameSuit Checks whether the cards have the same Suit
 func (c *Card) SameSuit(c2 *Card) bool {
 	return c.Suit == c2.Suit
 }
 
-// Checks if th
+// IsSingingPair Checks if th
 func (c *Card) IsSingingPair(c2 *Card) bool {
+	if c2 == nil {
+		return false
+	}
 	if c.SameSuit(c2) {
 		return (c.Val == 10 || c.Val == 12) && (c2.Val == 10 || c2.Val == 12)
 
@@ -59,19 +64,18 @@ func (c *Card) IsSingingPair(c2 *Card) bool {
 	}
 }
 
-
 // Returns the Points that this Card gives
 func (c *Card) value() int {
 	return c.Points
 }
 
-// Checks if 2 cards are equal
-func (c *Card) equals(c2 *Card) bool {
+// Equals Checks if 2 cards are equal
+func (c *Card) Equals(c2 *Card) bool {
 	return c.Suit == c2.Suit && c.Val == c2.Val
 }
 
 // Returns the Points that this Card gives
-func getPoints(cardName int) int {
+func GetPoints(cardName int) int {
 	switch cardName {
 	case 1:
 		return 11
@@ -86,4 +90,8 @@ func getPoints(cardName int) int {
 	default:
 		return 0
 	}
+}
+
+func (c *Card) String() string {
+	return fmt.Sprintf("%d de %s, p %v", c.Val, c.Suit, c.Playable)
 }

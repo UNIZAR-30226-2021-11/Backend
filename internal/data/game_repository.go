@@ -308,6 +308,71 @@ func (gr *GameRepository) CreateTournament(ctx context.Context, g *game.Game) er
 	return nil
 }
 
+// End ends a game by id.
+func (gr *GameRepository) End(ctx context.Context, game game.Game) error {
+	endGame := `
+	UPDATE games set end_date = $1
+		WHERE id = $2;
+	`
+
+	winnedPair := `
+	UPDATE pairs set winned = true, game_points = $1
+		WHERE id = $2;
+	`
+
+	lostPair := `
+	UPDATE pairs set winned = false, game_points = $1
+		WHERE id = $2;
+	`
+
+	// End the game
+	stmt, err := gr.Data.DB.PrepareContext(ctx, endGame)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, time.Now(), game.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Update winned pair
+	stmt, err = gr.Data.DB.PrepareContext(ctx, winnedPair)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, game.WinnedPoints, game.WinnedPair,
+	)
+	if err != nil {
+		return err
+	}
+
+	//Update lost pair
+	stmt, err = gr.Data.DB.PrepareContext(ctx, lostPair)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx, game.LostPoints, game.LostPair,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Update updates a game by id.
 func (gr *GameRepository) Update(ctx context.Context, id uint, game game.Game) error {
 	//TODO

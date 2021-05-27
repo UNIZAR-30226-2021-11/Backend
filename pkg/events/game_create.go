@@ -1,6 +1,6 @@
 package events
 
-type UserJoined struct {
+type GameCreate struct {
 	PlayerID uint32
 	PairID	 uint32
 	GameID   uint32

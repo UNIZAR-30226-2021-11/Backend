@@ -12,7 +12,7 @@ import (
 func main() {
 	godotenv.Load(".env")
 	port := os.Getenv("PORT")
-	serv, err := server.New(port)
+	serv, err := server.NewServer(port)
 	if err != nil {
 		log.Fatal(err)
 	}

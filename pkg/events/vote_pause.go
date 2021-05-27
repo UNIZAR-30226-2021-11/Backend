@@ -1,7 +1,7 @@
 package events
 
-type UserLeft struct {
+type VotePause struct {
 	PlayerID uint32
 	GameID   uint32
-	PairID   uint32
+	Vote     bool
 }

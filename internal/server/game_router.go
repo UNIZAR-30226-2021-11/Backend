@@ -1,4 +1,4 @@
-package v1
+package server
 
 import (
 	"Backend/internal/middleware"
@@ -132,23 +132,43 @@ func (gr *GameRouter) GetOneHandler(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, r, http.StatusOK, response.Map{"game": game})
 }
 
+func (gr *GameRouter) EndHandler(w http.ResponseWriter, r *http.Request) {
+	var g game.Game
+	err := json.NewDecoder(r.Body).Decode(&g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	err = gr.Repository.End(ctx, g)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, nil)
+}
+
 // Routes returns game router with each endpoint.
 func (gr *GameRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.Authorizator)
+	r.Put("/end", gr.EndHandler)
 
-	r.Get("/user/{userId}", gr.GetByUserHandler)
+	r.With(middleware.Authorizator).Get("/user/{userId}", gr.GetByUserHandler)
 
-	r.Get("/", gr.GetAllHandler)
+	r.With(middleware.Authorizator).Get("/", gr.GetAllHandler)
 
-	r.Get("/tournament", gr.GetTournamentHandler)
+	r.With(middleware.Authorizator).Get("/tournament", gr.GetTournamentHandler)
 
-	r.Get("/{gameId}", gr.GetOneHandler)
+	r.With(middleware.Authorizator).Get("/{gameId}", gr.GetOneHandler)
 
-	r.Post("/{userId}", gr.CreateHandler)
+	r.With(middleware.Authorizator).Post("/{userId}", gr.CreateHandler)
 
-	r.Post("/tournament", gr.CreateTournamentHandler)
+	r.With(middleware.Authorizator).Post("/tournament", gr.CreateTournamentHandler)
 
 	return r
 }

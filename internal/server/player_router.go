@@ -1,4 +1,4 @@
-package v1
+package server
 
 import (
 	"Backend/internal/middleware"
@@ -39,7 +39,6 @@ func (pr *PlayerRouter) Routes() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Authorizator)
-
 
 	r.Post("/", pr.CreateHandler)
 
